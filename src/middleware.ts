@@ -14,11 +14,11 @@ import auth from "#auth";
 // oh villeicht kauf ich mir pr-fnd.de oder so weil ist kürzer als pr.djl.foundation
 
 // pr.djl.foundation = root (intelligent routing for hero / home)
-// pr.djl.foundation/{example-user}/{shortname} = presentation view for presentation "shortname" - Free Tier
+// pr.djl.foundation/view/{example-user}/{shortname} = presentation view for presentation "shortname" - Free Tier
 // pr.djl.foundation/!{shortname} = presentation view for presentation "shortname" - Pro Tier
-// pr.djl.foundation/{example-user} = user profile w/public presentations - intelligent routing (e.g. if auth().user == example-user redirect to /)
+// pr.djl.foundation/profile/{example-user} = user profile w/public presentations - intelligent routing (e.g. if auth().user == example-user redirect to /)
 // example-org.pr.djl.foundation = organisation profile (if wanted) (intelligent routing for profile / org home) // Alias Org-Root
-// example-org.pr.djl.foundation/{shortname} = organisation presentation view for presentation "shortname"+
+// example-org.pr.djl.foundation/!{shortname} = organisation presentation view for presentation "shortname"+
 
 // Integration für Custom Domains (Pro Org)
 // e.g. subdomain.yourdomain.com (example: keynotes.hackclub-stade.de) // Need ideas on how to implement, maybe just a cname to pr.djl.foundation works? or does double cnames not work? e.g. customdomain.com -> pr.djl.foundation -> cname.vercel.com. or smth
@@ -83,6 +83,18 @@ import auth from "#auth";
 
 // Forbidden User and Shortnames:
 /**
+ * - /.well-known
+ * - /favicon.ico
+ * - /robots.txt
+ * - /sitemap.xml
+ * - /forbidden
+ * - /404
+ * - /500
+ * - /_error
+ * - /_app
+ * - /_document
+ * - /_middleware
+ * - /_static
  * - /sign-in
  * - /sign-up
  * - /pricing
@@ -125,9 +137,9 @@ const isOrgManagement = createRouteMatcher([
   "/org/settings(.*)",
   "/profile/select(.*)",
 ]);
-const isFreeTier = createRouteMatcher(["/([^/]+)/([^/]+)"]); // Matches /username/shortname
-const isUserProfile = createRouteMatcher(["^/([^/]+)$"]); // Matches /username (single path segment)
-const isProTier = createRouteMatcher(["/!([^/]+)"]); // Matches /!shortname
+const isFreeTier = createRouteMatcher(["/view/([^/]+)/([^/]+)"]); // Matches /view/username/shortname
+const isUserProfile = createRouteMatcher(["^/profile/([^/]+)$"]); // Matches /profile/username
+const isPaidPresentation = createRouteMatcher(["/!([^/]+)"]); // Matches /!shortname
 
 const isOrgRedirect = createRouteMatcher(["/org"]);
 const isSettingsRoute = createRouteMatcher(["/settings"]);
@@ -146,7 +158,7 @@ function isDev(hostname: string) {
 
 const isRootRoute = createRouteMatcher(["/"]);
 
-const debugFlag: boolean | "info" = false;
+const debugFlag: boolean | "info" = true;
 
 function log(message: string) {
   if (debugFlag !== false) {
@@ -173,6 +185,26 @@ function customRouter(): NextMiddleware {
     log(
       `Incoming request: Original Hostname=${originalHostname}, Pathname=${pathname}, SearchParams=${searchParams.toString()}`,
     );
+
+    // Check if this request matches any of our routing patterns
+    const shouldProcess =
+      (isAuth(request) && !pathname.startsWith("/api/auth/")) ||
+      isLegal(request) ||
+      isManagement(request) ||
+      isOrgManagement(request) ||
+      isFreeTier(request) ||
+      isUserProfile(request) ||
+      isPaidPresentation(request) ||
+      isOrgRedirect(request) ||
+      isSettingsRoute(request) ||
+      isManageRoute(request) ||
+      isRootRoute(request) ||
+      isOrg(effectiveHostname);
+    // Fast exit if this request doesn't match any of our patterns
+    if (!shouldProcess) {
+      debug(`No routing pattern matched for: ${pathname}, passing through`);
+      return NextResponse.next();
+    }
 
     // Determine the base origin for external redirects.
     // In development/preview environments, this must point back to the actual deployment URL (e.g., localhost:3000 or my-branch.vercel.app).
@@ -219,8 +251,30 @@ function customRouter(): NextMiddleware {
         `Production: Redirect Base Origin set to ${redirectBaseOrigin} (request origin)`,
       );
     }
+    // const authData = (await fetch(`${env.HOST_URL}/api/auth/get-session`, {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     headers: {
+    //       ...headers,
+    //       "x-forwarded-host": effectiveHostname,
+    //       "x-forwarded-proto": protocol.replace(":", ""),
+    //     },
+    //   }),
+    // }).then((res) => res.json())) as Awaited<
+    //   ReturnType<typeof auth.api.getSession>
+    // >;
+    const authData = await auth.api.getSession({
+      headers: {
+        ...headers,
+      },
+    });
 
-    const authData = await auth.api.getSession({ headers });
+    if (!authData) {
+      throw new Error("Failed to fetch auth data.");
+    }
 
     let fullOrgData = null;
     if (authData?.session.activeOrganizationId) {
@@ -411,7 +465,7 @@ function customRouter(): NextMiddleware {
       return response;
     }
 
-    if (isProTier(request)) {
+    if (isPaidPresentation(request)) {
       log("Handling Pro Tier route");
       const shortname = pathname.substring(2); // Remove leading /!
       log(`Extracted shortname: ${shortname}`);
@@ -453,11 +507,12 @@ export default customRouter();
 
 // Configuration for the middleware matcher, specifying which paths it should run on.
 export const config = {
+  runtime: "nodejs",
   matcher: [
     // Skip Next.js internals (e.g., _next) and all static files.
-    // The `[^?]*\\.(?:html?|css|js(?!on)|zip|webmanifest)` part ensures it runs
+    // The `[^?]*\\\\.(?:html?|css|js(?!on)|zip|webmanifest)` part ensures it runs
     // on paths that are not static files, unless they have a query parameter (like `?subdomain=`).
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|zip|webmanifest)).*)",
+    "/((?!_next|[^?]*\\\\.(?:html?|css|js(?!on)|zip|webmanifest)).*)",
     // Always run for API and tRPC routes.
     "/(api|trpc)(.*)",
   ],

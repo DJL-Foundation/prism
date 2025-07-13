@@ -1,6 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
+import auth from "#auth";
+import { redirect } from "next/navigation";
 import { CreatePage } from "./core";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 // TODO: Implement Metadata
 export const metadata: Metadata = {
@@ -25,7 +27,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const Auth = await auth.protect();
+  const authData = await auth.api.getSession({ headers: await headers() });
+  if (!authData) {
+    redirect("/login");
+  }
 
-  return <CreatePage userId={Auth.userId} />;
+  return <CreatePage userId={authData.user.id} />;
 }

@@ -3,6 +3,9 @@ import { api } from "~/trpc/server";
 import { EditPage as ThEditPage } from "./core";
 import PresentationNotFound from "~/components/prnotfound";
 import Unauthorized from "~/components/unauth";
+import auth from "#auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{
@@ -37,7 +40,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function EditPage({ params }: Props) {
-  const user = await auth.protect();
+  // const user = await auth.protect();
+  const authData = await auth.api.getSession({ headers: await headers() });
+
+  if (!authData) {
+    redirect("/login");
+  }
 
   const { shortname } = await params;
   const data = await api.presentations.getByShortname(shortname);
@@ -46,7 +54,7 @@ export default async function EditPage({ params }: Props) {
     return <PresentationNotFound />;
   }
 
-  if (user.userId !== data.ownerId) {
+  if (authData.user.id !== data.ownerId) {
     return <Unauthorized edit />;
   }
 

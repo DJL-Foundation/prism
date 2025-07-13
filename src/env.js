@@ -1,9 +1,9 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { config } from "dotenv";
+// import { config } from "dotenv";
 import { z } from "zod";
 
 // IMPORTANT: To Load the env use (vercel env pull .env) / our db needs the .env not .env.local
-config({ path: ".env" });
+// config({ path: ".env" });
 
 const getBetterAuthUrl = () => {
   // Handle client-side
@@ -69,7 +69,7 @@ export const env = createEnv({
 
     // Better Auth
     NEXT_PUBLIC_HOST_URL: z.string().url(),
-    NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID: z.string(),
+    NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID: z.string(), // ith this is for the one tap login
   },
   runtimeEnv: {
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
@@ -96,7 +96,8 @@ export const env = createEnv({
     GITHUB_AUTH_CLIENT_ID: process.env.GITHUB_AUTH_CLIENT_ID,
     GITHUB_AUTH_CLIENT_SECRET: process.env.GITHUB_AUTH_CLIENT_SECRET,
     GOOGLE_AUTH_CLIENT_ID: process.env.GOOGLE_AUTH_CLIENT_ID,
-    NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID: process.env.GOOGLE_AUTH_CLIENT_ID,
+    NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID:
+      process.env.NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID,
     GOOGLE_AUTH_CLIENT_SECRET: process.env.GOOGLE_AUTH_CLIENT_SECRET,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

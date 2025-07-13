@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
@@ -38,6 +38,7 @@ import {
 } from "~/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { type presentations } from "@prisma/client";
+import { motion } from "motion/react";
 const uuidType = z.string().uuid();
 
 export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
@@ -73,11 +74,8 @@ export function EditPage({ id }: { id: z.infer<typeof uuidType> }) {
   return <PresentationForm presentation={data} />;
 }
 
-function PresentationForm({
-  presentation,
-}: {
-  presentation: presentations;
-}) {  const router = useRouter();
+function PresentationForm({ presentation }: { presentation: presentations }) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     shortname: presentation.shortname,
     title: presentation.title,
@@ -256,7 +254,9 @@ function PresentationForm({
         </div>
       </div>
 
-      <div>        <Card>
+      <div>
+        {" "}
+        <Card>
           <form onSubmit={handleSubmit}>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -544,7 +544,7 @@ function PresentationForm({
             </CardContent>
           </form>
         </Card>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
