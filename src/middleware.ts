@@ -5,9 +5,9 @@ import {
   isManagement,
   isLegal,
   isOrgManagement,
-  isFreeTier,
+  isFreePresentation,
   isUserProfile,
-  isPaidPresentation,
+  isProPresentation,
   isOrgRedirect,
   isSettingsRoute,
   isManageRoute,
@@ -16,6 +16,10 @@ import {
   forbiddenNames,
 } from "~/lib/routes.generated";
 import { middlewareCustomLogger } from "~/lib/logging";
+import {
+  generateVerificationUuid,
+  generateVerificationHashes,
+} from "~/lib/internal-verification";
 
 // Future Routing Structure
 // Based on example routes
@@ -31,7 +35,7 @@ import { middlewareCustomLogger } from "~/lib/logging";
 // pr.djl.foundation/!{shortname} = presentation view for presentation "shortname" - Pro Tier
 // pr.djl.foundation/{example-user} = user profile w/public presentations - intelligent routing (e.g. if auth().user == example-user redirect to /)
 // example-org.pr.djl.foundation = organisation profile (if wanted) (intelligent routing for profile / org home) // Alias Org-Root
-// example-org.pr.djl.foundation/!{shortname} = organisation presentation view for presentation "shortname"+
+// example-org.pr.djl.foundation/{shortname} = organisation presentation view for presentation "shortname"+
 
 // Integration für Custom Domains (Pro Org)
 // e.g. subdomain.yourdomain.com (example: keynotes.hackclub-stade.de) // Need ideas on how to implement, maybe just a cname to pr.djl.foundation works? or does double cnames not work? e.g. customdomain.com -> pr.djl.foundation -> cname.vercel.com. or smth
@@ -140,6 +144,26 @@ function isDev(hostname: string) {
   return hostname === "localhost" || hostname.endsWith(".vercel.app");
 }
 
+/**
+ * Set verification cookie and header for internal routes
+ */
+function setInternalVerification(response: NextResponse): void {
+  const verificationUuid = generateVerificationUuid();
+  const { cookieHash, headerHash } =
+    generateVerificationHashes(verificationUuid);
+
+  // Set verification cookie (httpOnly for security)
+  response.cookies.set("internal-verify", cookieHash, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 60 * 60, // 1 hour
+  });
+
+  // Set verification header
+  response.headers.set("x-internal-no-evict", headerHash);
+}
+
 function customRouter(): NextMiddleware {
   return async (request) => {
     const {
@@ -177,9 +201,9 @@ function customRouter(): NextMiddleware {
       needsAuth ||
       (isAuth(request) && !pathname.startsWith("/api/auth/")) ||
       isLegal(request) ||
-      isFreeTier(request) ||
+      isFreePresentation(request) ||
       isUserProfile(request) ||
-      isPaidPresentation(request) ||
+      isProPresentation(request) ||
       isOrgRedirect(request);
 
     // Fast exit if this request doesn't match any of our patterns
@@ -278,35 +302,38 @@ function customRouter(): NextMiddleware {
       middlewareCustomLogger.info("Handling custom domains/orgs (rewrites)");
       if (pathname === "/") {
         middlewareCustomLogger.info("Org root path");
-        if (!isSignedIn) {
+        const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
+
+        if (isSignedIn) {
+          // Redirect to check route to verify org membership
+          const targetUrl = new URL(
+            `/api/internal/org-check/${orgSlugFromEffectiveHostname}`,
+            redirectBaseOrigin,
+          );
+          targetUrl.search = request.nextUrl.search;
+          middlewareCustomLogger.success(
+            `Redirecting to org membership check: ${targetUrl.toString()}`,
+          );
+          middlewareCustomLogger.end("Request handled - org check redirect");
+          return NextResponse.redirect(targetUrl);
+        } else {
+          // Not signed in users see profile page
           const response = NextResponse.rewrite(
-            new URL("/internal/hero/B2C", request.url),
+            new URL(
+              `/internal/profile/org/${orgSlugFromEffectiveHostname}`,
+              request.url,
+            ),
           );
           middlewareCustomLogger.custom(
             "rewrite",
             "REWRITE",
-            `Rewriting to /internal/hero/B2C: ${response.url}`,
+            `Rewriting to /internal/profile/org: ${response.url}`,
           );
-          response.headers.set("x-internal-no-evict", "true");
+          setInternalVerification(response);
           middlewareCustomLogger.end("Request handled - rewrite");
           return response;
         }
-        const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
-        const response = NextResponse.rewrite(
-          new URL(
-            `/internal/home/org/${orgSlugFromEffectiveHostname}`,
-            request.url,
-          ),
-        );
-        middlewareCustomLogger.custom(
-          "rewrite",
-          "REWRITE",
-          `Rewriting to /internal/home/org: ${response.url}`,
-        );
-        response.headers.set("x-internal-no-evict", "true");
-        middlewareCustomLogger.end("Request handled - rewrite");
-        return response;
-      } else {
+      } else if (isUserProfile(request)) {
         middlewareCustomLogger.info("Org presentation path");
         const shortname = pathname.substring(1);
         middlewareCustomLogger.debug(`Extracted shortname: ${shortname}`);
@@ -329,7 +356,7 @@ function customRouter(): NextMiddleware {
           "REWRITE",
           `Rewriting to /internal/view/org: ${response.url}`,
         );
-        response.headers.set("x-internal-no-evict", "true");
+        setInternalVerification(response);
         middlewareCustomLogger.end("Request handled - rewrite");
         return response;
       }
@@ -360,17 +387,17 @@ function customRouter(): NextMiddleware {
         "REWRITE",
         `Rewriting to /internal/profile/user: ${response.url}`,
       );
-      response.headers.set("x-internal-no-evict", "true");
+      setInternalVerification(response);
       middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }
 
     // Handle free tier routes
-    if (isFreeTier(request)) {
+    if (isFreePresentation(request)) {
       middlewareCustomLogger.custom(
         "route-match",
         "ROUTING",
-        "Handling Free Tier route",
+        "Handling Free Presentation route",
       );
       const parts = pathname.split("/");
       const username = parts[1];
@@ -397,17 +424,17 @@ function customRouter(): NextMiddleware {
         "REWRITE",
         `Rewriting to /internal/view/free: ${response.url}`,
       );
-      response.headers.set("x-internal-no-evict", "true");
+      setInternalVerification(response);
       middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }
 
     // Handle pro tier routes
-    if (isPaidPresentation(request)) {
+    if (isProPresentation(request)) {
       middlewareCustomLogger.custom(
         "route-match",
         "ROUTING",
-        "Handling Pro Tier route",
+        "Handling Pro Presentation route",
       );
       const shortname = pathname.substring(2); // Remove leading /!
       middlewareCustomLogger.debug(`Extracted shortname: ${shortname}`);
@@ -426,7 +453,7 @@ function customRouter(): NextMiddleware {
         "REWRITE",
         `Rewriting to /internal/view/pro: ${response.url}`,
       );
-      response.headers.set("x-internal-no-evict", "true");
+      setInternalVerification(response);
       middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }
@@ -447,7 +474,7 @@ function customRouter(): NextMiddleware {
           "REWRITE",
           `Rewriting to /internal/hero/B2C: ${response.url}`,
         );
-        response.headers.set("x-internal-no-evict", "true");
+        setInternalVerification(response);
         middlewareCustomLogger.end("Request handled - rewrite");
         return response;
       }
@@ -459,7 +486,7 @@ function customRouter(): NextMiddleware {
         "REWRITE",
         `Rewriting to /internal/home/user: ${response.url}`,
       );
-      response.headers.set("x-internal-no-evict", "true");
+      setInternalVerification(response);
       middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }

@@ -100,6 +100,24 @@ export const ALL_PATHS = [
 ] as const;
 
 /**
+ * First segments from all paths - used for intelligent route matching
+ */
+export const FIRST_SEGMENTS = [
+  "api",
+  "create",
+  "edit",
+  "internal",
+  "manage",
+  "pricing",
+  "privacy",
+  "profile",
+  "sign-in",
+  "sign-up",
+  "terms",
+  "waitlist"
+] as const;
+
+/**
  * Bypass routes that should instantly pass through middleware
  */
 export const BYPASS_ROUTES = [
@@ -495,18 +513,32 @@ export const isBypass = createRouteMatcher(BYPASS_ROUTES.map(route =>
   route.includes('*') ? route.replace('*', '(.*)') : route
 ));
 
-// Safe user profile matcher - excludes all static routes
+/**
+ * Pro presentation matcher - matches /!shortname
+ */
+export const isProPresentation = createRouteMatcher(["/!([^/]+)"]);
+
+/**
+ * User profile matcher - matches single paths that are NOT in first segments
+ */
 export const isUserProfile = createRouteMatcher([
-  "^/(?!" + STATIC_ROUTES.join("|") + ")([^/!]+)$"
+  "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)$"
 ]);
 
-// Safe free tier matcher - excludes all static routes
-export const isFreeTier = createRouteMatcher([
-  "^/(?!" + STATIC_ROUTES.join("|") + ")([^/!]+)/([^/]+)$"
+/**
+ * Free presentation matcher - matches /username/shortname where username is NOT in first segments
+ */
+export const isFreePresentation = createRouteMatcher([
+  "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)/([^/]+)$"
 ]);
-
-export const isPaidPresentation = createRouteMatcher(["/!([^/]+)"]);
 export const isOrgRedirect = createRouteMatcher(["/org"]);
 export const isSettingsRoute = createRouteMatcher(["/settings"]);
 export const isManageRoute = createRouteMatcher(["/manage"]);
 export const isRootRoute = createRouteMatcher(["^/$"]);
+
+// Legacy matchers for backwards compatibility
+export const isPaidPresentation = isProPresentation;
+export const isFreeTier = isFreePresentation;
+
+// Org-specific matcher (same as user profile for single paths)
+export const isOrgPresentation = isUserProfile;

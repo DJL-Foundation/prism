@@ -20,8 +20,9 @@ const config: NextConfig = {
     ],
   },
   experimental: {
-    // ppr: true,
+    // ppr: true, // Disabled - requires Next.js canary
     useCache: true,
+    authInterrupts: true,
   },
   turbopack: {
     root: __dirname,

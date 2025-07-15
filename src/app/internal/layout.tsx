@@ -1,7 +1,8 @@
 import chalk from "chalk";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { headers, cookies } from "next/headers";
+import { forbidden } from "next/navigation";
 import { Logger } from "~/lib/logging";
+import { verifyInternalAccess } from "~/lib/internal-verification";
 
 const LayoutLogger = new Logger("InternalLayout", "debug", {
   customMethods: {
@@ -9,13 +10,13 @@ const LayoutLogger = new Logger("InternalLayout", "debug", {
       color: chalk.blueBright,
       type: "HEADERS",
     },
-    "header-found": {
+    "verification-success": {
       color: chalk.greenBright,
-      type: "EVICT HEADER",
+      type: "VERIFICATION",
     },
-    "header-not-found": {
+    "verification-failed": {
       color: chalk.redBright,
-      type: "EVICT HEADER",
+      type: "VERIFICATION",
     },
   },
 });
@@ -25,24 +26,31 @@ export default async function InternalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  LayoutLogger.start("Checking internal headers");
+  LayoutLogger.start("Checking internal verification");
 
   const headerList = await headers();
-  const internalHeader = headerList.get("x-internal-no-evict");
+  const cookieStore = await cookies();
 
-  if (internalHeader !== "true") {
+  const verificationHeader = headerList.get("x-internal-no-evict") ?? undefined;
+  const verificationCookie = cookieStore.get("internal-verify")?.value;
+
+  // Verify that both cookie and header are present and valid
+  if (!verifyInternalAccess(verificationCookie, verificationHeader)) {
     LayoutLogger.custom(
-      "header-not-found",
-      "Internal header not found, redirecting",
-      "",
+      "verification-failed",
+      "Internal verification failed, redirecting to forbidden",
+      `Cookie: ${verificationCookie ? "present" : "missing"}, Header: ${verificationHeader ? "present" : "missing"}`,
     );
-    LayoutLogger.end("Internal header check completed");
-    redirect("/");
+    LayoutLogger.end("Internal verification check completed");
+    forbidden();
   }
 
-  LayoutLogger.custom("header-found", "Internal header found, proceeding", "");
-
-  LayoutLogger.end("Internal header check completed");
+  LayoutLogger.custom(
+    "verification-success",
+    "Internal verification passed",
+    "",
+  );
+  LayoutLogger.end("Internal verification check completed");
 
   return <>{children}</>;
 }
