@@ -1,17 +1,28 @@
-import { createHash } from "crypto";
-
 // Salt constants for different hash types
 const COOKIE_SALT = `cookie-internal-verify-${new Date().getFullYear()}`;
 const HEADER_SALT = `header-internal-verify-${new Date().getFullYear()}`;
 
 /**
- * Generate a hash from UUID with specific salt
+ * A simple hash function to avoid crypto dependency.
+ * This is not for security, but for simple verification.
  */
-function hashWithSalt(uuid: string, salt: string): string {
-  return createHash("sha256")
-    .update(uuid + salt)
-    .digest("hex")
-    .substring(0, 16); // Shorter hash for performance
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  // Convert to a fixed-length hex string
+  return ("00000000" + hash.toString(16)).slice(-8);
+}
+
+
+/**
+ * Generate a hash from a string with a specific salt.
+ */
+function hashWithSalt(text: string, salt: string): string {
+  return simpleHash(text + salt);
 }
 
 /**
@@ -35,18 +46,23 @@ export function verifyInternalAccess(
     return false;
   }
 
-  // Generate test UUID and check if hashes match
-  // This is a simple verification - in practice we'd need to store the original UUID
-  // For now, we'll use a different approach: check if they're both present and valid format
-  const isValidCookieHash = /^[a-f0-9]{16}$/.test(cookieHash);
-  const isValidHeaderHash = /^[a-f0-9]{16}$/.test(headerHash);
+  // This is a simple verification.
+  // We are just checking if the hashes are present and have the correct format.
+  const isValidCookieHash = /^[a-f0-9]{8}$/.test(cookieHash);
+  const isValidHeaderHash = /^[a-f0-9]{8}$/.test(headerHash);
 
   return isValidCookieHash && isValidHeaderHash;
 }
 
 /**
- * Generate a random UUID for verification
+ * Generate a random string for verification.
  */
 export function generateVerificationUuid(): string {
-  return crypto.randomUUID();
+    const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    const length = 36; // UUID-like length
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
 }
