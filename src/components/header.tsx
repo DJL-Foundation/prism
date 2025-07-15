@@ -2,8 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
-import authClient from "#auth/client";
-import { use } from "react";
+// import authClient from "#auth/client";
+// import { use } from "react";
 
 export default function Header() {
   const userButtonAppearance = {
@@ -11,7 +11,7 @@ export default function Header() {
       userButtonAvatarBox: "w-10 h-10",
     },
   };
-  const authData = use(authClient.getSession()).data;
+  // const authData = use(authClient.getSession()).data;
 
   return (
     <header className="bg-background border-b print:border-none">
@@ -41,13 +41,13 @@ export default function Header() {
 
         <div className="flex items-center space-x-4 print:hidden">
           <ThemeToggle />
-          {authData && (
+          {/* {authData && (
             <Button asChild>
               <Link prefetch href="/manage">
                 Manage
               </Link>
             </Button>
-          )}
+          )} */}
 
           <div className="relative h-10">
             Very beautiful user button here

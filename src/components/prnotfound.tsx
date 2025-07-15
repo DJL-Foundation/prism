@@ -5,11 +5,11 @@ import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { VolumeX, Home, Plus } from "react-feather";
 import { Card, CardContent } from "~/components/ui/card";
-import { use } from "react";
-import authClient from "../server/auth-client";
+// import { use } from "react";
+// import authClient from "../server/auth-client";
 
 export default function PresentationNotFound() {
-  const authData = use(authClient.getSession()).data;
+  // const authData = use(authClient.getSession()).data;
 
   return (
     <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
@@ -82,7 +82,7 @@ export default function PresentationNotFound() {
                   Return Home
                 </Link>
               </Button>
-              {authData && (
+              {/* {authData && (
                 <Button variant="outline" asChild>
                   <Link href="/create" className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
@@ -102,7 +102,7 @@ export default function PresentationNotFound() {
                     Sign In to Create
                   </Link>
                 </Button>
-              )}
+              )} */}
             </motion.div>
           </motion.div>
         </CardContent>

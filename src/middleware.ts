@@ -1,10 +1,21 @@
+import { type NextMiddleware, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 import {
-  type NextMiddleware,
-  type NextRequest,
-  NextResponse,
-} from "next/server";
-import { forbiddenNames } from "./lib/constants";
-import auth from "#auth";
+  isAuth,
+  isManagement,
+  isLegal,
+  isOrgManagement,
+  isFreeTier,
+  isUserProfile,
+  isPaidPresentation,
+  isOrgRedirect,
+  isSettingsRoute,
+  isManageRoute,
+  isRootRoute,
+  isBypass,
+  forbiddenNames,
+} from "~/lib/routes.generated";
+import { middlewareCustomLogger } from "~/lib/logging";
 
 // Future Routing Structure
 // Based on example routes
@@ -13,10 +24,12 @@ import auth from "#auth";
 
 // oh villeicht kauf ich mir pr-fnd.de oder so weil ist kürzer als pr.djl.foundation
 
+// zwischendurch idee dass die view seiten auf /view/[shortname] sind aber jetzt mit meinem script kann ich erstmal alle paths checken und dann einfach davon ausgehen das das ein userprofile ist
+
 // pr.djl.foundation = root (intelligent routing for hero / home)
-// pr.djl.foundation/view/{example-user}/{shortname} = presentation view for presentation "shortname" - Free Tier
+// pr.djl.foundation/{example-user}/{shortname} = presentation view for presentation "shortname" - Free Tier
 // pr.djl.foundation/!{shortname} = presentation view for presentation "shortname" - Pro Tier
-// pr.djl.foundation/profile/{example-user} = user profile w/public presentations - intelligent routing (e.g. if auth().user == example-user redirect to /)
+// pr.djl.foundation/{example-user} = user profile w/public presentations - intelligent routing (e.g. if auth().user == example-user redirect to /)
 // example-org.pr.djl.foundation = organisation profile (if wanted) (intelligent routing for profile / org home) // Alias Org-Root
 // example-org.pr.djl.foundation/!{shortname} = organisation presentation view for presentation "shortname"+
 
@@ -118,35 +131,6 @@ import auth from "#auth";
  * - /trpc
  */
 
-// Route Matchers for different paths
-const isAuth = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/pricing(.*)",
-  "/waitlist(.*)",
-  "/profile(.*)",
-]);
-const isManagement = createRouteMatcher([
-  "/manage(.*)",
-  "/edit/(.*)",
-  "/create(.*)",
-]);
-const isLegal = createRouteMatcher(["/terms(.*)", "/privacy(.*)"]);
-const isOrgManagement = createRouteMatcher([
-  "/org/create(.*)",
-  "/org/settings(.*)",
-  "/profile/select(.*)",
-]);
-const isFreeTier = createRouteMatcher(["/view/([^/]+)/([^/]+)"]); // Matches /view/username/shortname
-const isUserProfile = createRouteMatcher(["^/profile/([^/]+)$"]); // Matches /profile/username
-const isPaidPresentation = createRouteMatcher(["/!([^/]+)"]); // Matches /!shortname
-
-const isOrgRedirect = createRouteMatcher(["/org"]);
-const isSettingsRoute = createRouteMatcher(["/settings"]);
-const isManageRoute = createRouteMatcher(["/manage"]);
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const isListRoute = createRouteMatcher(["/list"]);
-
 function isOrg(hostname: string) {
   const baseDomain = ".pr.djl.foundation";
   return hostname.endsWith(baseDomain) && hostname !== `pr${baseDomain}`;
@@ -154,22 +138,6 @@ function isOrg(hostname: string) {
 
 function isDev(hostname: string) {
   return hostname === "localhost" || hostname.endsWith(".vercel.app");
-}
-
-const isRootRoute = createRouteMatcher(["/"]);
-
-const debugFlag: boolean | "info" = true;
-
-function log(message: string) {
-  if (debugFlag !== false) {
-    console.log(`[Middleware] LOG ${message}`);
-  }
-}
-
-function debug(message: string) {
-  if (debugFlag === true) {
-    console.debug(`[Middleware] DEBUG ${message}`);
-  }
 }
 
 function customRouter(): NextMiddleware {
@@ -180,212 +148,147 @@ function customRouter(): NextMiddleware {
       searchParams,
     } = request.nextUrl;
     let effectiveHostname = originalHostname;
-    const headers = request.headers;
 
-    log(
+    middlewareCustomLogger.start("Processing request");
+    middlewareCustomLogger.info(
       `Incoming request: Original Hostname=${originalHostname}, Pathname=${pathname}, SearchParams=${searchParams.toString()}`,
     );
 
-    // Check if this request matches any of our routing patterns
-    const shouldProcess =
-      (isAuth(request) && !pathname.startsWith("/api/auth/")) ||
-      isLegal(request) ||
+    // Fast bypass for static assets and specified routes
+    if (isBypass(request)) {
+      middlewareCustomLogger.debug(
+        `Bypass route matched for: ${pathname}, passing through instantly`,
+      );
+      middlewareCustomLogger.end("Request bypassed");
+      return NextResponse.next();
+    }
+
+    // Check if this request matches any of our routing patterns that need auth
+    const needsAuth =
       isManagement(request) ||
       isOrgManagement(request) ||
-      isFreeTier(request) ||
-      isUserProfile(request) ||
-      isPaidPresentation(request) ||
-      isOrgRedirect(request) ||
       isSettingsRoute(request) ||
       isManageRoute(request) ||
       isRootRoute(request) ||
       isOrg(effectiveHostname);
+
+    // Check if this request matches any routing patterns (including those that don't need auth)
+    const shouldProcess =
+      needsAuth ||
+      (isAuth(request) && !pathname.startsWith("/api/auth/")) ||
+      isLegal(request) ||
+      isFreeTier(request) ||
+      isUserProfile(request) ||
+      isPaidPresentation(request) ||
+      isOrgRedirect(request);
+
     // Fast exit if this request doesn't match any of our patterns
     if (!shouldProcess) {
-      debug(`No routing pattern matched for: ${pathname}, passing through`);
+      middlewareCustomLogger.debug(
+        `No routing pattern matched for: ${pathname}, passing through`,
+      );
+      middlewareCustomLogger.end("Request passed through");
       return NextResponse.next();
     }
 
     // Determine the base origin for external redirects.
-    // In development/preview environments, this must point back to the actual deployment URL (e.g., localhost:3000 or my-branch.vercel.app).
-    // In production, it's simply the request's origin.
     const protocol = request.nextUrl.protocol;
     const port = request.nextUrl.port ? ":" + request.nextUrl.port : "";
-    debug(
+    middlewareCustomLogger.debug(
       `Request Protocol=${protocol}, Port=${port}, Original Hostname=${originalHostname}`,
     );
 
     let redirectBaseOrigin: string;
 
     if (isDev(originalHostname)) {
-      log(`DX: Detected development or preview environment.`);
-
+      middlewareCustomLogger.info(
+        `DX: Detected development or preview environment.`,
+      );
       redirectBaseOrigin = `${protocol}://${originalHostname}${port}`;
-      debug(`DX: Redirect Base Origin set to ${redirectBaseOrigin}`);
+      middlewareCustomLogger.debug(
+        `DX: Redirect Base Origin set to ${redirectBaseOrigin}`,
+      );
 
       const subdomainParam = searchParams.get("subdomain");
-      debug(`DX: Subdomain parameter from search params: ${subdomainParam}`);
+      middlewareCustomLogger.debug(
+        `DX: Subdomain parameter from search params: ${subdomainParam}`,
+      );
 
       if (subdomainParam) {
-        log(`DX: Simulating subdomain: ${subdomainParam}`);
-
+        middlewareCustomLogger.info(
+          `DX: Simulating subdomain: ${subdomainParam}`,
+        );
         effectiveHostname = `${subdomainParam}.pr.djl.foundation`;
       } else {
-        log(
+        middlewareCustomLogger.info(
           `DX: No subdomain param, defaulting effective hostname to main domain.`,
         );
-
         effectiveHostname = `pr.djl.foundation`;
       }
 
-      debug(`DX: Effective Hostname for logic = ${effectiveHostname}`);
-
-      debug(
-        `DX: Redirect Base Origin for external redirects = ${redirectBaseOrigin}`,
+      middlewareCustomLogger.debug(
+        `DX: Effective Hostname for logic = ${effectiveHostname}`,
       );
-
-      log(`DX: Exiting DX logic`);
+      middlewareCustomLogger.info(`DX: Exiting DX logic`);
     } else {
       redirectBaseOrigin = request.nextUrl.origin;
-      debug(
+      middlewareCustomLogger.debug(
         `Production: Redirect Base Origin set to ${redirectBaseOrigin} (request origin)`,
       );
     }
-    // const authData = (await fetch(`${env.HOST_URL}/api/auth/get-session`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     headers: {
-    //       ...headers,
-    //       "x-forwarded-host": effectiveHostname,
-    //       "x-forwarded-proto": protocol.replace(":", ""),
-    //     },
-    //   }),
-    // }).then((res) => res.json())) as Awaited<
-    //   ReturnType<typeof auth.api.getSession>
-    // >;
-    const authData = await auth.api.getSession({
-      headers: {
-        ...headers,
-      },
-    });
 
-    if (!authData) {
-      throw new Error("Failed to fetch auth data.");
-    }
+    // Simple cookie-based auth check using Better Auth's recommended approach
+    const sessionCookie = getSessionCookie(request);
+    const isSignedIn = !!sessionCookie;
 
-    let fullOrgData = null;
-    if (authData?.session.activeOrganizationId) {
-      fullOrgData = await auth.api.getFullOrganization({
-        query: { organizationId: authData.session.activeOrganizationId },
-        headers,
-      });
-    }
-
-    debug(
-      `Auth Data: userId=${authData?.user.id}, sessionId=${authData?.session.id}, orgId=${authData?.session.activeOrganizationId}, orgSlug=${fullOrgData?.slug}`,
+    middlewareCustomLogger.custom(
+      "auth-check",
+      "CHECKING",
+      `Session cookie exists: ${isSignedIn}`,
     );
 
-    // Scenario 1: On a simulated/real organization subdomain.
-    if (isOrg(effectiveHostname)) {
-      log(`Scenario 1: On Org Subdomain active`);
-      if (
-        isAuth(request) ||
-        isLegal(request) ||
-        isManagement(request) ||
-        isOrgManagement(request)
-      ) {
-        const targetUrl = new URL(pathname, redirectBaseOrigin);
-        targetUrl.searchParams.delete("subdomain");
-        debug(
-          `Redirecting from org subdomain to main domain: ${targetUrl.toString()}`,
-        );
-
-        log(`Redirecting to main domain: ${targetUrl.toString()}`);
-        return NextResponse.redirect(targetUrl);
-      }
-    }
-
-    // Scenario 2: On the main domain
-    if (!isOrg(effectiveHostname)) {
-      log(
-        `Scenario 2: On Main Domain, checking Management/Org-Management routes`,
-      );
-
-      debug(`User Org Slug: ${fullOrgData?.slug}`);
-
-      if (
-        fullOrgData?.slug &&
-        (isManagement(request) || isOrgManagement(request))
-      ) {
-        const targetUrl = new URL(pathname, redirectBaseOrigin);
-        targetUrl.searchParams.set("subdomain", fullOrgData.slug);
-        log(`Redirecting to org subdomain: ${targetUrl.toString()}`);
-        return NextResponse.redirect(targetUrl);
-      }
-    }
-
+    // Handle basic redirects first
     if (isOrgRedirect(request)) {
-      log("Handling /org redirect");
+      middlewareCustomLogger.info("Handling /org redirect");
       const targetUrl = new URL("/settings", redirectBaseOrigin);
       targetUrl.search = request.nextUrl.search;
-      log(`Redirecting /org to /settings: ${targetUrl.toString()}`);
+      middlewareCustomLogger.success(
+        `Redirecting /org to /settings: ${targetUrl.toString()}`,
+      );
+      middlewareCustomLogger.end("Request handled - redirect");
       return NextResponse.redirect(targetUrl);
     }
 
-    if (isSettingsRoute(request) && !isOrg(effectiveHostname)) {
-      log("Intelligent /settings redirect");
-      if (fullOrgData?.slug) {
-        const targetUrl = new URL(pathname, redirectBaseOrigin);
-        targetUrl.searchParams.set("subdomain", fullOrgData.slug);
-        log(`Redirecting /settings to org subdomain: ${targetUrl.toString()}`);
-        return NextResponse.redirect(targetUrl);
-      } else {
-        const targetUrl = new URL("/profile", redirectBaseOrigin);
-        targetUrl.search = request.nextUrl.search;
-        log("Redirecting /settings to /profile");
-        return NextResponse.redirect(targetUrl);
-      }
-    }
-
-    if (isManageRoute(request) && !isOrg(effectiveHostname)) {
-      log("Intelligent /manage redirect");
-      if (fullOrgData?.slug) {
-        const targetUrl = new URL(pathname, redirectBaseOrigin);
-        targetUrl.searchParams.set("subdomain", fullOrgData.slug);
-        log(`Redirecting /manage to org subdomain: ${targetUrl.toString()}`);
-        return NextResponse.redirect(targetUrl);
-      } else {
-        const targetUrl = new URL("/list", redirectBaseOrigin);
-        targetUrl.search = request.nextUrl.search;
-        log("Redirecting /manage to /list");
-        return NextResponse.redirect(targetUrl);
-      }
-    }
-
+    // Handle management routes - require auth
     if (isManagement(request)) {
-      log("Handling Management route: protecting.");
-      // await auth.protect();
-      if (!authData) {
-        log("No auth data found, redirecting to /sign-in");
+      middlewareCustomLogger.info("Handling Management route: protecting.");
+      if (!isSignedIn) {
+        middlewareCustomLogger.warn(
+          "No session found, redirecting to /sign-in",
+        );
         const targetUrl = new URL("/sign-in", redirectBaseOrigin);
         targetUrl.search = request.nextUrl.search;
+        middlewareCustomLogger.end("Request handled - auth redirect");
         return NextResponse.redirect(targetUrl);
       }
     }
 
+    // Handle org subdomain logic
     if (isOrg(effectiveHostname)) {
-      log("Handling custom domains/orgs (rewrites)");
+      middlewareCustomLogger.info("Handling custom domains/orgs (rewrites)");
       if (pathname === "/") {
-        log("Org root path");
-        if (!authData) {
+        middlewareCustomLogger.info("Org root path");
+        if (!isSignedIn) {
           const response = NextResponse.rewrite(
             new URL("/internal/hero/B2C", request.url),
           );
-          log(`Rewriting to /internal/hero/B2C: ${response.url}`);
+          middlewareCustomLogger.custom(
+            "rewrite",
+            "REWRITE",
+            `Rewriting to /internal/hero/B2C: ${response.url}`,
+          );
           response.headers.set("x-internal-no-evict", "true");
+          middlewareCustomLogger.end("Request handled - rewrite");
           return response;
         }
         const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
@@ -395,15 +298,23 @@ function customRouter(): NextMiddleware {
             request.url,
           ),
         );
-        log(`Rewriting to /internal/home/org: ${response.url}`);
+        middlewareCustomLogger.custom(
+          "rewrite",
+          "REWRITE",
+          `Rewriting to /internal/home/org: ${response.url}`,
+        );
         response.headers.set("x-internal-no-evict", "true");
+        middlewareCustomLogger.end("Request handled - rewrite");
         return response;
       } else {
-        log("Org presentation path");
+        middlewareCustomLogger.info("Org presentation path");
         const shortname = pathname.substring(1);
-        log(`Extracted shortname: ${shortname}`);
+        middlewareCustomLogger.debug(`Extracted shortname: ${shortname}`);
         if (forbiddenNames.includes(shortname)) {
-          log("Shortname is forbidden, rewriting to /forbidden");
+          middlewareCustomLogger.warn(
+            "Shortname is forbidden, rewriting to /forbidden",
+          );
+          middlewareCustomLogger.end("Request handled - forbidden");
           return NextResponse.rewrite(new URL("/forbidden", request.url));
         }
         const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
@@ -413,101 +324,154 @@ function customRouter(): NextMiddleware {
             request.url,
           ),
         );
-        log(`Rewriting to /internal/view/org: ${response.url}`);
+        middlewareCustomLogger.custom(
+          "rewrite",
+          "REWRITE",
+          `Rewriting to /internal/view/org: ${response.url}`,
+        );
         response.headers.set("x-internal-no-evict", "true");
+        middlewareCustomLogger.end("Request handled - rewrite");
         return response;
       }
     }
 
+    // Handle user profile routes
     if (isUserProfile(request)) {
-      log("Handling User Profile route");
+      middlewareCustomLogger.custom(
+        "route-match",
+        "ROUTING",
+        "Handling User Profile route",
+      );
       const username = pathname.substring(1);
-      log(`Extracted username: ${username}`);
+      middlewareCustomLogger.debug(`Extracted username: ${username}`);
       if (forbiddenNames.includes(username)) {
-        log("Username is forbidden, rewriting to /forbidden");
+        middlewareCustomLogger.warn(
+          "Username is forbidden, rewriting to /forbidden",
+        );
+        middlewareCustomLogger.end("Request handled - forbidden");
         return NextResponse.rewrite(new URL("/forbidden", request.url));
-      }
-
-      if (authData?.user.username === username) {
-        log("Authenticated user matches profile, redirecting to home page.");
-        const targetUrl = new URL("/", redirectBaseOrigin);
-        targetUrl.searchParams.delete("subdomain");
-        return NextResponse.redirect(targetUrl);
       }
 
       const response = NextResponse.rewrite(
         new URL(`/internal/profile/user/${username}`, request.url),
       );
-      log(`Rewriting to /internal/profile/user: ${response.url}`);
+      middlewareCustomLogger.custom(
+        "rewrite",
+        "REWRITE",
+        `Rewriting to /internal/profile/user: ${response.url}`,
+      );
       response.headers.set("x-internal-no-evict", "true");
+      middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }
 
+    // Handle free tier routes
     if (isFreeTier(request)) {
-      log("Handling Free Tier route");
+      middlewareCustomLogger.custom(
+        "route-match",
+        "ROUTING",
+        "Handling Free Tier route",
+      );
       const parts = pathname.split("/");
       const username = parts[1];
       const shortname = parts[2];
-      log(`Extracted username: ${username}, shortname: ${shortname}`);
+      middlewareCustomLogger.debug(
+        `Extracted username: ${username}, shortname: ${shortname}`,
+      );
 
       if (
         (username && forbiddenNames.includes(username)) ||
         (shortname && forbiddenNames.includes(shortname))
       ) {
-        log("Username or shortname is forbidden, rewriting to /forbidden");
+        middlewareCustomLogger.warn(
+          "Username or shortname is forbidden, rewriting to /forbidden",
+        );
+        middlewareCustomLogger.end("Request handled - forbidden");
         return NextResponse.rewrite(new URL("/forbidden", request.url));
       }
       const response = NextResponse.rewrite(
         new URL(`/internal/view/free/${username}/${shortname}`, request.url),
       );
-      log(`Rewriting to /internal/view/free: ${response.url}`);
+      middlewareCustomLogger.custom(
+        "rewrite",
+        "REWRITE",
+        `Rewriting to /internal/view/free: ${response.url}`,
+      );
       response.headers.set("x-internal-no-evict", "true");
+      middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }
 
+    // Handle pro tier routes
     if (isPaidPresentation(request)) {
-      log("Handling Pro Tier route");
+      middlewareCustomLogger.custom(
+        "route-match",
+        "ROUTING",
+        "Handling Pro Tier route",
+      );
       const shortname = pathname.substring(2); // Remove leading /!
-      log(`Extracted shortname: ${shortname}`);
+      middlewareCustomLogger.debug(`Extracted shortname: ${shortname}`);
       if (forbiddenNames.includes(shortname)) {
-        log("Shortname is forbidden, rewriting to /forbidden");
+        middlewareCustomLogger.warn(
+          "Shortname is forbidden, rewriting to /forbidden",
+        );
+        middlewareCustomLogger.end("Request handled - forbidden");
         return NextResponse.rewrite(new URL("/forbidden", request.url));
       }
       const response = NextResponse.rewrite(
         new URL(`/internal/view/pro/${shortname}`, request.url),
       );
-      log(`Rewriting to /internal/view/pro: ${response.url}`);
+      middlewareCustomLogger.custom(
+        "rewrite",
+        "REWRITE",
+        `Rewriting to /internal/view/pro: ${response.url}`,
+      );
       response.headers.set("x-internal-no-evict", "true");
+      middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }
 
+    // Handle root route
     if (isRootRoute(request)) {
-      log("Handling Root Route (main domain)");
-      if (!authData) {
+      middlewareCustomLogger.custom(
+        "route-match",
+        "ROUTING",
+        "Handling Root Route (main domain)",
+      );
+      if (!isSignedIn) {
         const response = NextResponse.rewrite(
           new URL("/internal/hero/B2C", request.url),
         );
-        log(`Rewriting to /internal/hero/B2C: ${response.url}`);
+        middlewareCustomLogger.custom(
+          "rewrite",
+          "REWRITE",
+          `Rewriting to /internal/hero/B2C: ${response.url}`,
+        );
         response.headers.set("x-internal-no-evict", "true");
+        middlewareCustomLogger.end("Request handled - rewrite");
         return response;
       }
       const response = NextResponse.rewrite(
         new URL(`/internal/home/user`, request.url),
       );
-      log(`Rewriting to /internal/home/user: ${response.url}`);
+      middlewareCustomLogger.custom(
+        "rewrite",
+        "REWRITE",
+        `Rewriting to /internal/home/user: ${response.url}`,
+      );
       response.headers.set("x-internal-no-evict", "true");
+      middlewareCustomLogger.end("Request handled - rewrite");
       return response;
     }
 
+    middlewareCustomLogger.end("Request completed - next");
     return NextResponse.next();
   };
 }
 
 export default customRouter();
 
-// Configuration for the middleware matcher, specifying which paths it should run on.
 export const config = {
-  runtime: "nodejs",
   matcher: [
     // Skip Next.js internals (e.g., _next) and all static files.
     // The `[^?]*\\\\.(?:html?|css|js(?!on)|zip|webmanifest)` part ensures it runs
@@ -517,12 +481,3 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 };
-
-function createRouteMatcher(patterns: string[]) {
-  const regexes = patterns.map((pattern) => new RegExp(pattern));
-
-  return (request: NextRequest) => {
-    const { pathname } = request.nextUrl;
-    return regexes.some((regex) => regex.test(pathname));
-  };
-}
