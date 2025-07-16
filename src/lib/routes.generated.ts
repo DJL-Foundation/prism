@@ -134,7 +134,6 @@ export const BYPASS_ROUTES = [
   "/api/mcp/*",
   "/api/og",
   "/api/og/*",
-  "/api/sentry-tunnel",
   "/api/trpc",
   "/api/trpc/*",
   "/api/uploadthing",
@@ -149,6 +148,9 @@ export const BYPASS_ROUTES = [
   "/img/pro-kahoot.png",
   "/img/share.png",
   "/img/usb.png",
+  "/ingest/*",
+  "/ingest/decide",
+  "/ingest/static/*",
   "/logo.png",
   "/manifest.json",
   "/ping",
@@ -241,6 +243,14 @@ export const ALL_ROUTES = [
     isApi: true,
     isDynamic: true,
     segments: ["api", "mcp", "[transport]"]
+  },
+  {
+    path: "/api/internal/org-check/[orgSlug]",
+    isPage: false,
+    isLayout: false,
+    isApi: true,
+    isDynamic: true,
+    segments: ["api", "internal", "org-check", "[orgSlug]"]
   },
   {
     path: "/create",

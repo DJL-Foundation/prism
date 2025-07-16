@@ -33,6 +33,8 @@ export const bypassRoutesTemplate = [
   // Development tools
   "/__nextjs_original-stack-frame",
 
-  // Sentry
-  "/api/sentry-tunnel",
+  // Posthog
+  "/ingest/static/*",
+  "/ingest/*",
+  "/ingest/decide",
 ] as const;

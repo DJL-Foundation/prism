@@ -6,19 +6,19 @@ import { type NextConfig } from "next";
 import "./src/env.js";
 
 const config: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "848t5ajmid.ufs.sh",
-        pathname: "/f/*",
-      },
-      {
-        protocol: "https",
-        hostname: "arvdoawqez6yhriu.public.blob.vercel-storage.com",
-      },
-    ],
-  },
+  // images: {
+  //   remotePatterns: [
+  //     {
+  //       protocol: "https",
+  //       hostname: "848t5ajmid.ufs.sh",
+  //       pathname: "/f/*",
+  //     },
+  //     {
+  //       protocol: "https",
+  //       hostname: "arvdoawqez6yhriu.public.blob.vercel-storage.com",
+  //     },
+  //   ],
+  // },
   experimental: {
     // ppr: true, // Disabled - requires Next.js canary
     useCache: true,
