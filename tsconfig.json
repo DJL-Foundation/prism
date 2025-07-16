@@ -45,6 +45,7 @@
     "**/*.js",
     ".next/types/**/*.ts",
     ".storybook/**/*.ts",
+    ".storybook/**/*.tsx",
   ],
   "exclude": ["node_modules"]
 }

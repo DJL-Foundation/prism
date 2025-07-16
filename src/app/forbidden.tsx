@@ -1,3 +1,3 @@
-import Unauthorized from "~/components/unauth";
+import Forbidden from "~/components/pages/forbidden";
 
-export default Unauthorized;
+export default Forbidden;

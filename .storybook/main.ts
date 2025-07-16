@@ -1,4 +1,5 @@
 import type { StorybookConfig } from "@storybook/nextjs-vite";
+import tailwindcss from "@tailwindcss/postcss";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -13,5 +14,15 @@ const config: StorybookConfig = {
     options: {},
   },
   staticDirs: ["../public"],
+  viteFinal: async (config) => {
+    // Ensure PostCSS processes Tailwind properly
+    config.css = {
+      ...config.css,
+      postcss: {
+        plugins: [tailwindcss],
+      },
+    };
+    return config;
+  },
 };
 export default config;
