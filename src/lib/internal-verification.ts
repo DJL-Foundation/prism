@@ -17,7 +17,6 @@ function simpleHash(str: string): string {
   return ("00000000" + hash.toString(16)).slice(-8);
 }
 
-
 /**
  * Generate a hash from a string with a specific salt.
  */
@@ -58,11 +57,11 @@ export function verifyInternalAccess(
  * Generate a random string for verification.
  */
 export function generateVerificationUuid(): string {
-    const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    const length = 36; // UUID-like length
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
+  const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const length = 36; // UUID-like length
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
 }

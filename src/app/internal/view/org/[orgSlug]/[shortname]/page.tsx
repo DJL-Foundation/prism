@@ -7,5 +7,10 @@ export default function ViewOrgPage() {
   const params = useParams();
   const orgSlug = params.orgSlug as string;
   const shortname = params.shortname as string;
-  return <Maintenance debug={true} message={`/internal/view/org/${orgSlug}/${shortname}`} />;
+  return (
+    <Maintenance
+      debug={true}
+      message={`/internal/view/org/${orgSlug}/${shortname}`}
+    />
+  );
 }

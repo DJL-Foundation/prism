@@ -98,43 +98,6 @@ import {
  * - / // Presentation View, Hero, Home and more...
  */
 
-// Forbidden User and Shortnames:
-/**
- * - /.well-known
- * - /favicon.ico
- * - /robots.txt
- * - /sitemap.xml
- * - /forbidden
- * - /404
- * - /500
- * - /_error
- * - /_app
- * - /_document
- * - /_middleware
- * - /_static
- * - /sign-in
- * - /sign-up
- * - /pricing
- * - /waitlist
- * - /profile
- * - /terms
- * - /privacy
- * - /manage
- * - /edit
- * - /create
- * - /org
- * - /settings
- * - /select
- * - /hero
- * - /home
- * - /view
- * - /layout
- * - /_internal
- * - /_next
- * - /api
- * - /trpc
- */
-
 function isOrg(hostname: string) {
   const baseDomain = ".pr.djl.foundation";
   return hostname.endsWith(baseDomain) && hostname !== `pr${baseDomain}`;

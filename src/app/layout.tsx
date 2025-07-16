@@ -97,27 +97,27 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${GeistSans.variable} antialiased`}>
-          <TRPCReactProvider>
-            <PostHogProvider>
-              <NextSSRPlugin
-                routerConfig={extractRouterConfig(UploadthingRouter)}
-              />
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                <Toaster />
-                <div className="min-h-screen flex flex-col bg-background text-foreground">
-                  <Header />
-                  <main className="grow">{children}</main>
-                  <Footer />
-                </div>
-              </ThemeProvider>
-              {shouldShowVercelToolbar && <VercelToolbar />}
-            </PostHogProvider>
-          </TRPCReactProvider>
+        <TRPCReactProvider>
+          <PostHogProvider>
+            <NextSSRPlugin
+              routerConfig={extractRouterConfig(UploadthingRouter)}
+            />
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Toaster />
+              <div className="min-h-screen flex flex-col bg-background text-foreground">
+                <Header />
+                <main className="grow">{children}</main>
+                <Footer />
+              </div>
+            </ThemeProvider>
+            {shouldShowVercelToolbar && <VercelToolbar />}
+          </PostHogProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );

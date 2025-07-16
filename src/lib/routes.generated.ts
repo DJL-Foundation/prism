@@ -16,7 +16,10 @@ export function isStaticRoute(pathname: string): boolean {
   const cleanPath = pathname.startsWith("/") ? pathname.substring(1) : pathname;
   const firstSegment = cleanPath.split("/")[0];
   if (!firstSegment) return false;
-  return (STATIC_ROUTES as readonly string[]).includes(firstSegment) || (STATIC_ROUTES as readonly string[]).includes(cleanPath);
+  return (
+    (STATIC_ROUTES as readonly string[]).includes(firstSegment) ||
+    (STATIC_ROUTES as readonly string[]).includes(cleanPath)
+  );
 }
 
 /**
@@ -42,7 +45,7 @@ export const STATIC_ROUTES = [
   "sign-in",
   "sign-up",
   "terms",
-  "waitlist"
+  "waitlist",
 ] as const;
 
 /**
@@ -59,7 +62,7 @@ export const PUBLIC_PATHS = [
   "/img/pro-kahoot.png",
   "/img/share.png",
   "/img/usb.png",
-  "/placeholder.svg"
+  "/placeholder.svg",
 ] as const;
 
 /**
@@ -96,7 +99,7 @@ export const ALL_PATHS = [
   "sign-in",
   "sign-up",
   "terms",
-  "waitlist"
+  "waitlist",
 ] as const;
 
 /**
@@ -114,7 +117,7 @@ export const FIRST_SEGMENTS = [
   "sign-in",
   "sign-up",
   "terms",
-  "waitlist"
+  "waitlist",
 ] as const;
 
 /**
@@ -157,7 +160,7 @@ export const BYPASS_ROUTES = [
   "/placeholder.svg",
   "/robots.txt",
   "/sitemap.xml",
-  "/status"
+  "/status",
 ] as const;
 
 /**
@@ -170,7 +173,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["privacy"]
+    segments: ["privacy"],
   },
   {
     path: "/terms",
@@ -178,7 +181,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["terms"]
+    segments: ["terms"],
   },
   {
     path: "/api/cron/transfers",
@@ -186,7 +189,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: false,
-    segments: ["api", "cron", "transfers"]
+    segments: ["api", "cron", "transfers"],
   },
   {
     path: "/api/og/imagegen",
@@ -194,7 +197,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: false,
-    segments: ["api", "og", "imagegen"]
+    segments: ["api", "og", "imagegen"],
   },
   {
     path: "/api/trpc/[trpc]",
@@ -202,7 +205,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: true,
-    segments: ["api", "trpc", "[trpc]"]
+    segments: ["api", "trpc", "[trpc]"],
   },
   {
     path: "/api/uploadthing",
@@ -210,7 +213,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: false,
-    segments: ["api", "uploadthing"]
+    segments: ["api", "uploadthing"],
   },
   {
     path: "/api/2well2know/vercel/flags",
@@ -218,7 +221,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: false,
-    segments: ["api", "2well2know", "vercel", "flags"]
+    segments: ["api", "2well2know", "vercel", "flags"],
   },
   {
     path: "/api/2well2know/oauth-authorization-server",
@@ -226,7 +229,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: false,
-    segments: ["api", "2well2know", "oauth-authorization-server"]
+    segments: ["api", "2well2know", "oauth-authorization-server"],
   },
   {
     path: "/api/auth/[...all]",
@@ -234,7 +237,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: true,
-    segments: ["api", "auth", "[...all]"]
+    segments: ["api", "auth", "[...all]"],
   },
   {
     path: "/api/mcp/[transport]",
@@ -242,7 +245,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: true,
-    segments: ["api", "mcp", "[transport]"]
+    segments: ["api", "mcp", "[transport]"],
   },
   {
     path: "/api/internal/org-check/[orgSlug]",
@@ -250,7 +253,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: true,
     isDynamic: true,
-    segments: ["api", "internal", "org-check", "[orgSlug]"]
+    segments: ["api", "internal", "org-check", "[orgSlug]"],
   },
   {
     path: "/create",
@@ -258,7 +261,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["create"]
+    segments: ["create"],
   },
   {
     path: "/edit/[shortname]",
@@ -266,7 +269,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["edit", "[shortname]"]
+    segments: ["edit", "[shortname]"],
   },
   {
     path: "/manage",
@@ -274,7 +277,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["manage"]
+    segments: ["manage"],
   },
   {
     path: "/pricing",
@@ -282,7 +285,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["pricing"]
+    segments: ["pricing"],
   },
   {
     path: "/profile/[[...user-profile]]",
@@ -290,7 +293,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["profile", "[[...user-profile]]"]
+    segments: ["profile", "[[...user-profile]]"],
   },
   {
     path: "/sign-in/[[...sign-in]]",
@@ -298,7 +301,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["sign-in", "[[...sign-in]]"]
+    segments: ["sign-in", "[[...sign-in]]"],
   },
   {
     path: "/sign-up/[[...sign-up]]",
@@ -306,7 +309,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["sign-up", "[[...sign-up]]"]
+    segments: ["sign-up", "[[...sign-up]]"],
   },
   {
     path: "/waitlist",
@@ -314,7 +317,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["waitlist"]
+    segments: ["waitlist"],
   },
   {
     path: "/",
@@ -322,7 +325,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: []
+    segments: [],
   },
   {
     path: "/",
@@ -330,7 +333,7 @@ export const ALL_ROUTES = [
     isLayout: true,
     isApi: false,
     isDynamic: false,
-    segments: []
+    segments: [],
   },
   {
     path: "/internal/hero/B2B",
@@ -338,7 +341,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["internal", "hero", "B2B"]
+    segments: ["internal", "hero", "B2B"],
   },
   {
     path: "/internal/hero/B2C",
@@ -346,7 +349,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["internal", "hero", "B2C"]
+    segments: ["internal", "hero", "B2C"],
   },
   {
     path: "/internal/home/org/[orgSlug]",
@@ -354,7 +357,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["internal", "home", "org", "[orgSlug]"]
+    segments: ["internal", "home", "org", "[orgSlug]"],
   },
   {
     path: "/internal/home/user",
@@ -362,7 +365,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: ["internal", "home", "user"]
+    segments: ["internal", "home", "user"],
   },
   {
     path: "/internal/profile/org/[orgSlug]",
@@ -370,7 +373,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["internal", "profile", "org", "[orgSlug]"]
+    segments: ["internal", "profile", "org", "[orgSlug]"],
   },
   {
     path: "/internal/profile/user/[username]",
@@ -378,7 +381,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["internal", "profile", "user", "[username]"]
+    segments: ["internal", "profile", "user", "[username]"],
   },
   {
     path: "/internal/view/free/[username]/[shortname]",
@@ -386,7 +389,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["internal", "view", "free", "[username]", "[shortname]"]
+    segments: ["internal", "view", "free", "[username]", "[shortname]"],
   },
   {
     path: "/internal/view/org/[orgSlug]/[shortname]",
@@ -394,7 +397,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["internal", "view", "org", "[orgSlug]", "[shortname]"]
+    segments: ["internal", "view", "org", "[orgSlug]", "[shortname]"],
   },
   {
     path: "/internal/view/pro/[shortname]",
@@ -402,7 +405,7 @@ export const ALL_ROUTES = [
     isLayout: false,
     isApi: false,
     isDynamic: true,
-    segments: ["internal", "view", "pro", "[shortname]"]
+    segments: ["internal", "view", "pro", "[shortname]"],
   },
   {
     path: "/internal",
@@ -410,8 +413,8 @@ export const ALL_ROUTES = [
     isLayout: true,
     isApi: false,
     isDynamic: false,
-    segments: ["internal"]
-  }
+    segments: ["internal"],
+  },
 ] as const;
 
 /**
@@ -488,7 +491,7 @@ export const forbiddenNames = [
   "user",
   "waitlist",
   "web",
-  "www"
+  "www",
 ];
 
 /**
@@ -496,7 +499,7 @@ export const forbiddenNames = [
  */
 export const isAuth = createRouteMatcher([
   "/sign-in(.*)",
-  "/sign-up(.*)", 
+  "/sign-up(.*)",
   "/pricing(.*)",
   "/waitlist(.*)",
   "/profile(.*)",
@@ -504,7 +507,7 @@ export const isAuth = createRouteMatcher([
 
 export const isManagement = createRouteMatcher([
   "/manage(.*)",
-  "/edit/(.*)", 
+  "/edit/(.*)",
   "/create(.*)",
 ]);
 
@@ -519,9 +522,11 @@ export const isOrgManagement = createRouteMatcher([
 /**
  * Bypass matcher - instantly passes through middleware
  */
-export const isBypass = createRouteMatcher(BYPASS_ROUTES.map(route => 
-  route.includes('*') ? route.replace('*', '(.*)') : route
-));
+export const isBypass = createRouteMatcher(
+  BYPASS_ROUTES.map((route) =>
+    route.includes("*") ? route.replace("*", "(.*)") : route,
+  ),
+);
 
 /**
  * Pro presentation matcher - matches /!shortname
@@ -532,14 +537,14 @@ export const isProPresentation = createRouteMatcher(["/!([^/]+)"]);
  * User profile matcher - matches single paths that are NOT in first segments
  */
 export const isUserProfile = createRouteMatcher([
-  "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)$"
+  "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)$",
 ]);
 
 /**
  * Free presentation matcher - matches /username/shortname where username is NOT in first segments
  */
 export const isFreePresentation = createRouteMatcher([
-  "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)/([^/]+)$"
+  "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)/([^/]+)$",
 ]);
 export const isOrgRedirect = createRouteMatcher(["/org"]);
 export const isSettingsRoute = createRouteMatcher(["/settings"]);
