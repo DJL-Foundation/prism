@@ -5,6 +5,7 @@ import env from "#env";
 import { Redis, type SetCommandOptions } from "@upstash/redis";
 import { defaultLogLevel, Logger } from "~/lib/logging";
 import chalk from "chalk";
+import withPrefix from "~/lib/redis-prefixer";
 
 const dbLogger = new Logger("DB", defaultLogLevel, {
   customMethods: {
@@ -35,35 +36,13 @@ const dbLogger = new Logger("DB", defaultLogLevel, {
   },
 });
 
-const cacheLayer = new Redis({
-  url: env.DB_CACHE_KV_REST_API_URL,
-  token: env.DB_CACHE_KV_REST_API_TOKEN,
-});
-
-// Wrapper to add key prefix since Upstash doesn't support it natively
-const cacheLayerWithPrefix = {
-  ...cacheLayer,
-  get: (key: string) =>
-    cacheLayer.get(`@foundation/presentation-foundation&${key}`),
-  set: (
-    key: string,
-    value: string | number | boolean | object,
-    options?: SetCommandOptions,
-  ) =>
-    cacheLayer.set(
-      `@foundation/presentation-foundation&${key}`,
-      value,
-      options,
-    ),
-  del: (key: string) =>
-    cacheLayer.del(`@foundation/presentation-foundation&${key}`),
-  exists: (key: string) =>
-    cacheLayer.exists(`@foundation/presentation-foundation&${key}`),
-  expire: (key: string, seconds: number) =>
-    cacheLayer.expire(`@foundation/presentation-foundation&${key}`, seconds),
-  ttl: (key: string) =>
-    cacheLayer.ttl(`@foundation/presentation-foundation&${key}`),
-} as Redis;
+const cacheLayer = withPrefix(
+  "@foundation/presentation-foundation&db-cache&",
+  new Redis({
+    url: env.DB_KV_KV_REST_API_URL,
+    token: env.DB_KV_KV_REST_API_TOKEN,
+  }),
+);
 
 const cacheMiddleware: Prisma.Middleware = createPrismaRedisCache({
   models: [
@@ -100,7 +79,7 @@ const cacheMiddleware: Prisma.Middleware = createPrismaRedisCache({
     type: "redis",
     options: {
       // @ts-expect-error Mismatching Redis Versions, but compatible
-      client: cacheLayerWithPrefix,
+      client: cacheLayer,
       invalidation: { referencesTTL: 300 },
       log: {
         info: (message: string) => dbLogger.info(message),

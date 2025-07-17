@@ -15,6 +15,7 @@ export const bypassRoutesTemplate = [
   "/api/mcp/*",
   "/api/2well2know",
   "/api/2well2know/*",
+  "/.well-known",
 
   // Health checks and monitoring
   "/health",
@@ -29,6 +30,11 @@ export const bypassRoutesTemplate = [
   "/_next/*",
   "/_vercel",
   "/_vercel/*",
+
+  // MCP routes
+  "/api/mcp",
+  "/api/mcp/*",
+  "/.well-known/oauth-protected-resource/*",
 
   // Development tools
   "/__nextjs_original-stack-frame",

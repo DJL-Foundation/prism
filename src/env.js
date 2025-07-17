@@ -55,11 +55,11 @@ export const env = createEnv({
     DB_READ2_STRING: z.url(),
 
     // Database Cache Layer (using Upstash Redis)
-    DB_CACHE_KV_URL: z.url(),
-    DB_CACHE_KV_REST_API_READ_ONLY_TOKEN: z.string(),
-    DB_CACHE_REDIS_URL: z.url(),
-    DB_CACHE_KV_REST_API_TOKEN: z.string(),
-    DB_CACHE_KV_REST_API_URL: z.url(),
+    DB_KV_KV_URL: z.url(),
+    DB_KV_KV_REST_API_READ_ONLY_TOKEN: z.string(),
+    DB_KV_REDIS_URL: z.url(),
+    DB_KV_KV_REST_API_TOKEN: z.string(),
+    DB_KV_KV_REST_API_URL: z.url(),
 
     // Auth
     BETTER_AUTH_SECRET: z.string(),
@@ -95,12 +95,12 @@ export const env = createEnv({
     DB_READ2_STRING: process.env.DB_READ2_STRING,
 
     // Database Cache Layer (using Upstash Redis)
-    DB_CACHE_KV_URL: process.env.DB_CACHE_KV_URL,
-    DB_CACHE_KV_REST_API_READ_ONLY_TOKEN:
-      process.env.DB_CACHE_KV_REST_API_READ_ONLY_TOKEN,
-    DB_CACHE_REDIS_URL: process.env.DB_CACHE_REDIS_URL,
-    DB_CACHE_KV_REST_API_TOKEN: process.env.DB_CACHE_KV_REST_API_TOKEN,
-    DB_CACHE_KV_REST_API_URL: process.env.DB_CACHE_KV_REST_API_URL,
+    DB_KV_KV_URL: process.env.DB_KV_KV_URL,
+    DB_KV_KV_REST_API_READ_ONLY_TOKEN:
+      process.env.DB_KV_KV_REST_API_READ_ONLY_TOKEN,
+    DB_KV_REDIS_URL: process.env.DB_KV_REDIS_URL,
+    DB_KV_KV_REST_API_TOKEN: process.env.DB_KV_KV_REST_API_TOKEN,
+    DB_KV_KV_REST_API_URL: process.env.DB_KV_KV_REST_API_URL,
 
     // Analytics
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,

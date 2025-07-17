@@ -123,6 +123,8 @@ export const FIRST_SEGMENTS = [
  * Bypass routes that should instantly pass through middleware
  */
 export const BYPASS_ROUTES = [
+  "/.well-known",
+  "/.well-known/oauth-protected-resource/*",
   "/__nextjs_original-stack-frame",
   "/_next",
   "/_next/*",
@@ -240,12 +242,12 @@ export const ALL_ROUTES = [
     segments: ["api", "auth", "[...all]"]
   },
   {
-    path: "/api/mcp/[transport]",
+    path: "/api/mcp/[[...transport]]",
     isPage: false,
     isLayout: false,
     isApi: true,
     isDynamic: true,
-    segments: ["api", "mcp", "[transport]"]
+    segments: ["api", "mcp", "[[...transport]]"]
   },
   {
     path: "/create",
@@ -288,12 +290,12 @@ export const ALL_ROUTES = [
     segments: ["profile", "[[...user-profile]]"]
   },
   {
-    path: "/sign-in/[[...sign-in]]",
+    path: "/sign-in",
     isPage: true,
     isLayout: false,
     isApi: false,
-    isDynamic: true,
-    segments: ["sign-in", "[[...sign-in]]"]
+    isDynamic: false,
+    segments: ["sign-in"]
   },
   {
     path: "/sign-up/[[...sign-up]]",

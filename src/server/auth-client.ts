@@ -15,6 +15,10 @@ const authClient = createAuthClient({
     passkeyClient(),
     oneTapClient({
       clientId: env.NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID,
+
+      autoSelect: true,
+      cancelOnTapOutside: true,
+      context: "signin",
     }),
     adminClient({
       ac,
