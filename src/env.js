@@ -42,57 +42,74 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    LOG_LEVEL: z.enum(["off", "prod", "debug"]).default("prod").optional(),
 
-    CLERK_SECRET_KEY: z.string(),
-
+    // File Storage
     UPLOADTHING_TOKEN: z.string(),
+    // No Vercel Blob anymore
 
-    DB_MAIN_STRING: z.string(),
-    DB_MAIN_DIRECT_STRING: z.string(),
-    DB_READ1_STRING: z.string(),
-    DB_READ2_STRING: z.string(),
+    // Database (NeonDB)
+    DB_MAIN_STRING: z.url(),
+    DB_MAIN_DIRECT_STRING: z.url(),
+    DB_READ1_STRING: z.url(),
+    DB_READ2_STRING: z.url(),
+
+    // Database Cache Layer (using Upstash Redis)
+    DB_CACHE_KV_URL: z.url(),
+    DB_CACHE_KV_REST_API_READ_ONLY_TOKEN: z.string(),
+    DB_CACHE_REDIS_URL: z.url(),
+    DB_CACHE_KV_REST_API_TOKEN: z.string(),
+    DB_CACHE_KV_REST_API_URL: z.url(),
 
     // Auth
     BETTER_AUTH_SECRET: z.string(),
-    BETTER_AUTH_URL: z.string().url(),
+    BETTER_AUTH_URL: z.url(),
     GITHUB_AUTH_CLIENT_SECRET: z.string(),
     GITHUB_AUTH_CLIENT_ID: z.string(),
     GOOGLE_AUTH_CLIENT_ID: z.string(),
     GOOGLE_AUTH_CLIENT_SECRET: z.string(),
   },
   client: {
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // Analytics
     NEXT_PUBLIC_POSTHOG_KEY: z.string(),
-    NEXT_PUBLIC_POSTHOG_HOST: z.string().url(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.url(),
     NEXT_PUBLIC_POSTHOG_PROJECT_ID: z.string(),
 
-    // Better Auth
-    NEXT_PUBLIC_HOST_URL: z.string().url(),
+    // Auth
+    NEXT_PUBLIC_HOST_URL: z.url(),
     NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID: z.string(), // ith this is for the one tap login
   },
   runtimeEnv: {
-    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
     NODE_ENV: process.env.NODE_ENV,
-    // VERCEL_URL: process.env.VERCEL_URL,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    NEXT_PUBLIC_HOST_URL: process.env.NEXT_PUBLIC_HOST_URL,
+    HOST_URL: process.env.HOST_URL,
+    LOG_LEVEL: process.env.LOG_LEVEL,
 
+    // File Storage
+    UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
+
+    // Database (NeonDB)
     DB_MAIN_STRING: process.env.DB_MAIN_STRING,
     DB_MAIN_DIRECT_STRING: process.env.DB_MAIN_DIRECT_STRING,
     DB_READ1_STRING: process.env.DB_READ1_STRING,
     DB_READ2_STRING: process.env.DB_READ2_STRING,
+
+    // Database Cache Layer (using Upstash Redis)
+    DB_CACHE_KV_URL: process.env.DB_CACHE_KV_URL,
+    DB_CACHE_KV_REST_API_READ_ONLY_TOKEN:
+      process.env.DB_CACHE_KV_REST_API_READ_ONLY_TOKEN,
+    DB_CACHE_REDIS_URL: process.env.DB_CACHE_REDIS_URL,
+    DB_CACHE_KV_REST_API_TOKEN: process.env.DB_CACHE_KV_REST_API_TOKEN,
+    DB_CACHE_KV_REST_API_URL: process.env.DB_CACHE_KV_REST_API_URL,
+
+    // Analytics
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_POSTHOG_PROJECT_ID: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID,
 
-    // Better Auth
+    // Auth
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
-    NEXT_PUBLIC_HOST_URL: process.env.NEXT_PUBLIC_HOST_URL,
-    HOST_URL: process.env.HOST_URL,
     GITHUB_AUTH_CLIENT_ID: process.env.GITHUB_AUTH_CLIENT_ID,
     GITHUB_AUTH_CLIENT_SECRET: process.env.GITHUB_AUTH_CLIENT_SECRET,
     GOOGLE_AUTH_CLIENT_ID: process.env.GOOGLE_AUTH_CLIENT_ID,

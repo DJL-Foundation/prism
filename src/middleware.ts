@@ -15,11 +15,29 @@ import {
   isBypass,
   forbiddenNames,
 } from "~/lib/routes.generated";
-import { middlewareCustomLogger } from "~/lib/logging";
 import {
   generateVerificationUuid,
   generateVerificationHashes,
 } from "~/lib/internal-verification";
+import { defaultLogLevel, Logger } from "./lib/logging";
+import chalk from "chalk";
+
+const middlewareLogger = new Logger("Middleware", defaultLogLevel, {
+  customMethods: {
+    "auth-check": {
+      color: chalk.magenta,
+      type: "AUTH_STATE",
+    },
+    "route-match": {
+      color: chalk.yellow,
+      type: "ROUTING",
+    },
+    rewrite: {
+      color: chalk.green,
+      type: "REWRITE",
+    },
+  },
+});
 
 // Future Routing Structure
 // Based on example routes
@@ -136,17 +154,17 @@ function customRouter(): NextMiddleware {
     } = request.nextUrl;
     let effectiveHostname = originalHostname;
 
-    middlewareCustomLogger.start("Processing request");
-    middlewareCustomLogger.info(
+    middlewareLogger.start("Processing request");
+    middlewareLogger.info(
       `Incoming request: Original Hostname=${originalHostname}, Pathname=${pathname}, SearchParams=${searchParams.toString()}`,
     );
 
     // Fast bypass for static assets and specified routes
     if (isBypass(request)) {
-      middlewareCustomLogger.debug(
+      middlewareLogger.debug(
         `Bypass route matched for: ${pathname}, passing through instantly`,
       );
-      middlewareCustomLogger.end("Request bypassed");
+      middlewareLogger.end("Request bypassed");
       return NextResponse.next();
     }
 
@@ -171,55 +189,51 @@ function customRouter(): NextMiddleware {
 
     // Fast exit if this request doesn't match any of our patterns
     if (!shouldProcess) {
-      middlewareCustomLogger.debug(
+      middlewareLogger.debug(
         `No routing pattern matched for: ${pathname}, passing through`,
       );
-      middlewareCustomLogger.end("Request passed through");
+      middlewareLogger.end("Request passed through");
       return NextResponse.next();
     }
 
     // Determine the base origin for external redirects.
     const protocol = request.nextUrl.protocol;
     const port = request.nextUrl.port ? ":" + request.nextUrl.port : "";
-    middlewareCustomLogger.debug(
+    middlewareLogger.debug(
       `Request Protocol=${protocol}, Port=${port}, Original Hostname=${originalHostname}`,
     );
 
     let redirectBaseOrigin: string;
 
     if (isDev(originalHostname)) {
-      middlewareCustomLogger.info(
-        `DX: Detected development or preview environment.`,
-      );
+      middlewareLogger.info(`DX: Detected development or preview environment.`);
       redirectBaseOrigin = `${protocol}://${originalHostname}${port}`;
-      middlewareCustomLogger.debug(
+      middlewareLogger.debug(
         `DX: Redirect Base Origin set to ${redirectBaseOrigin}`,
       );
 
       const subdomainParam = searchParams.get("subdomain");
-      middlewareCustomLogger.debug(
+      middlewareLogger.debug(
         `DX: Subdomain parameter from search params: ${subdomainParam}`,
       );
 
       if (subdomainParam) {
-        middlewareCustomLogger.info(
-          `DX: Simulating subdomain: ${subdomainParam}`,
-        );
+        middlewareLogger.info(`DX: Simulating subdomain: ${subdomainParam}`);
         effectiveHostname = `${subdomainParam}.pr.djl.foundation`;
       } else {
-        middlewareCustomLogger.info(
+        middlewareLogger.info(
           `DX: No subdomain param, defaulting effective hostname to main domain.`,
         );
         effectiveHostname = `pr.djl.foundation`;
       }
 
-      middlewareCustomLogger.debug(
+      middlewareLogger.debug(
         `DX: Effective Hostname for logic = ${effectiveHostname}`,
       );
-      middlewareCustomLogger.info(`DX: Exiting DX logic`);
+      middlewareLogger.info(`DX: Exiting DX logic`);
     } else {
       redirectBaseOrigin = request.nextUrl.origin;
-      middlewareCustomLogger.debug(
+      middlewareLogger.debug(
         `Production: Redirect Base Origin set to ${redirectBaseOrigin} (request origin)`,
       );
     }
@@ -228,7 +242,7 @@ function customRouter(): NextMiddleware {
     const sessionCookie = getSessionCookie(request);
     const isSignedIn = !!sessionCookie;
 
-    middlewareCustomLogger.custom(
+    middlewareLogger.custom(
       "auth-check",
       "CHECKING",
       `Session cookie exists: ${isSignedIn}`,
@@ -236,35 +250,33 @@ function customRouter(): NextMiddleware {
 
     // Handle basic redirects first
     if (isOrgRedirect(request)) {
-      middlewareCustomLogger.info("Handling /org redirect");
+      middlewareLogger.info("Handling /org redirect");
       const targetUrl = new URL("/settings", redirectBaseOrigin);
       targetUrl.search = request.nextUrl.search;
-      middlewareCustomLogger.success(
+      middlewareLogger.success(
         `Redirecting /org to /settings: ${targetUrl.toString()}`,
       );
-      middlewareCustomLogger.end("Request handled - redirect");
+      middlewareLogger.end("Request handled - redirect");
       return NextResponse.redirect(targetUrl);
     }
 
     // Handle management routes - require auth
     if (isManagement(request)) {
-      middlewareCustomLogger.info("Handling Management route: protecting.");
+      middlewareLogger.info("Handling Management route: protecting.");
       if (!isSignedIn) {
-        middlewareCustomLogger.warn(
-          "No session found, redirecting to /sign-in",
-        );
+        middlewareLogger.warn("No session found, redirecting to /sign-in");
         const targetUrl = new URL("/sign-in", redirectBaseOrigin);
         targetUrl.search = request.nextUrl.search;
-        middlewareCustomLogger.end("Request handled - auth redirect");
+        middlewareLogger.end("Request handled - auth redirect");
         return NextResponse.redirect(targetUrl);
       }
     }
 
     // Handle org subdomain logic
     if (isOrg(effectiveHostname)) {
-      middlewareCustomLogger.info("Handling custom domains/orgs (rewrites)");
+      middlewareLogger.info("Handling custom domains/orgs (rewrites)");
       if (pathname === "/") {
-        middlewareCustomLogger.info("Org root path");
+        middlewareLogger.info("Org root path");
         const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
 
         if (isSignedIn) {
@@ -274,10 +286,10 @@ function customRouter(): NextMiddleware {
             redirectBaseOrigin,
           );
           targetUrl.search = request.nextUrl.search;
-          middlewareCustomLogger.success(
+          middlewareLogger.success(
             `Redirecting to org membership check: ${targetUrl.toString()}`,
           );
-          middlewareCustomLogger.end("Request handled - org check redirect");
+          middlewareLogger.end("Request handled - org check redirect");
           return NextResponse.redirect(targetUrl);
         } else {
           // Not signed in users see profile page
@@ -287,24 +299,24 @@ function customRouter(): NextMiddleware {
               request.url,
             ),
           );
-          middlewareCustomLogger.custom(
+          middlewareLogger.custom(
             "rewrite",
             "REWRITE",
             `Rewriting to /internal/profile/org: ${response.url}`,
           );
           setInternalVerification(response);
-          middlewareCustomLogger.end("Request handled - rewrite");
+          middlewareLogger.end("Request handled - rewrite");
           return response;
         }
       } else if (isUserProfile(request)) {
-        middlewareCustomLogger.info("Org presentation path");
+        middlewareLogger.info("Org presentation path");
         const shortname = pathname.substring(1);
-        middlewareCustomLogger.debug(`Extracted shortname: ${shortname}`);
+        middlewareLogger.debug(`Extracted shortname: ${shortname}`);
         if (forbiddenNames.includes(shortname)) {
-          middlewareCustomLogger.warn(
+          middlewareLogger.warn(
             "Shortname is forbidden, rewriting to /forbidden",
           );
-          middlewareCustomLogger.end("Request handled - forbidden");
+          middlewareLogger.end("Request handled - forbidden");
           return NextResponse.rewrite(new URL("/forbidden", request.url));
         }
         const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
@@ -314,50 +326,48 @@ function customRouter(): NextMiddleware {
             request.url,
           ),
         );
-        middlewareCustomLogger.custom(
+        middlewareLogger.custom(
           "rewrite",
           "REWRITE",
           `Rewriting to /internal/view/org: ${response.url}`,
         );
         setInternalVerification(response);
-        middlewareCustomLogger.end("Request handled - rewrite");
+        middlewareLogger.end("Request handled - rewrite");
         return response;
       }
     }
 
     // Handle user profile routes
     if (isUserProfile(request)) {
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "route-match",
         "ROUTING",
         "Handling User Profile route",
       );
       const username = pathname.substring(1);
-      middlewareCustomLogger.debug(`Extracted username: ${username}`);
+      middlewareLogger.debug(`Extracted username: ${username}`);
       if (forbiddenNames.includes(username)) {
-        middlewareCustomLogger.warn(
-          "Username is forbidden, rewriting to /forbidden",
-        );
-        middlewareCustomLogger.end("Request handled - forbidden");
+        middlewareLogger.warn("Username is forbidden, rewriting to /forbidden");
+        middlewareLogger.end("Request handled - forbidden");
         return NextResponse.rewrite(new URL("/forbidden", request.url));
       }
 
       const response = NextResponse.rewrite(
         new URL(`/internal/profile/user/${username}`, request.url),
       );
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "rewrite",
         "REWRITE",
         `Rewriting to /internal/profile/user: ${response.url}`,
       );
       setInternalVerification(response);
-      middlewareCustomLogger.end("Request handled - rewrite");
+      middlewareLogger.end("Request handled - rewrite");
       return response;
     }
 
     // Handle free tier routes
     if (isFreePresentation(request)) {
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "route-match",
         "ROUTING",
         "Handling Free Presentation route",
@@ -365,7 +375,7 @@ function customRouter(): NextMiddleware {
       const parts = pathname.split("/");
       const username = parts[1];
       const shortname = parts[2];
-      middlewareCustomLogger.debug(
+      middlewareLogger.debug(
         `Extracted username: ${username}, shortname: ${shortname}`,
       );
 
@@ -373,57 +383,57 @@ function customRouter(): NextMiddleware {
         (username && forbiddenNames.includes(username)) ||
         (shortname && forbiddenNames.includes(shortname))
       ) {
-        middlewareCustomLogger.warn(
+        middlewareLogger.warn(
           "Username or shortname is forbidden, rewriting to /forbidden",
         );
-        middlewareCustomLogger.end("Request handled - forbidden");
+        middlewareLogger.end("Request handled - forbidden");
         return NextResponse.rewrite(new URL("/forbidden", request.url));
       }
       const response = NextResponse.rewrite(
         new URL(`/internal/view/free/${username}/${shortname}`, request.url),
       );
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "rewrite",
         "REWRITE",
         `Rewriting to /internal/view/free: ${response.url}`,
       );
       setInternalVerification(response);
-      middlewareCustomLogger.end("Request handled - rewrite");
+      middlewareLogger.end("Request handled - rewrite");
       return response;
     }
 
     // Handle pro tier routes
     if (isProPresentation(request)) {
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "route-match",
         "ROUTING",
         "Handling Pro Presentation route",
       );
       const shortname = pathname.substring(2); // Remove leading /!
-      middlewareCustomLogger.debug(`Extracted shortname: ${shortname}`);
+      middlewareLogger.debug(`Extracted shortname: ${shortname}`);
       if (forbiddenNames.includes(shortname)) {
-        middlewareCustomLogger.warn(
+        middlewareLogger.warn(
           "Shortname is forbidden, rewriting to /forbidden",
         );
-        middlewareCustomLogger.end("Request handled - forbidden");
+        middlewareLogger.end("Request handled - forbidden");
         return NextResponse.rewrite(new URL("/forbidden", request.url));
       }
       const response = NextResponse.rewrite(
         new URL(`/internal/view/pro/${shortname}`, request.url),
       );
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "rewrite",
         "REWRITE",
         `Rewriting to /internal/view/pro: ${response.url}`,
       );
       setInternalVerification(response);
-      middlewareCustomLogger.end("Request handled - rewrite");
+      middlewareLogger.end("Request handled - rewrite");
       return response;
     }
 
     // Handle root route
     if (isRootRoute(request)) {
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "route-match",
         "ROUTING",
         "Handling Root Route (main domain)",
@@ -432,29 +442,29 @@ function customRouter(): NextMiddleware {
         const response = NextResponse.rewrite(
           new URL("/internal/hero/B2C", request.url),
         );
-        middlewareCustomLogger.custom(
+        middlewareLogger.custom(
           "rewrite",
           "REWRITE",
           `Rewriting to /internal/hero/B2C: ${response.url}`,
         );
         setInternalVerification(response);
-        middlewareCustomLogger.end("Request handled - rewrite");
+        middlewareLogger.end("Request handled - rewrite");
         return response;
       }
       const response = NextResponse.rewrite(
         new URL(`/internal/home/user`, request.url),
       );
-      middlewareCustomLogger.custom(
+      middlewareLogger.custom(
         "rewrite",
         "REWRITE",
         `Rewriting to /internal/home/user: ${response.url}`,
       );
       setInternalVerification(response);
-      middlewareCustomLogger.end("Request handled - rewrite");
+      middlewareLogger.end("Request handled - rewrite");
       return response;
     }
 
-    middlewareCustomLogger.end("Request completed - next");
+    middlewareLogger.end("Request completed - next");
     return NextResponse.next();
   };
 }

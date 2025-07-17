@@ -7,6 +7,7 @@
 // This file serves the purpose of providing usefull wrappers around console.log
 // This is at first dedicated to scripts and middleware, posthog stuff may be implemented later
 
+import env from "#env";
 import chalk from "chalk";
 
 export type LogLevel = "off" | "prod" | "debug";
@@ -248,41 +249,10 @@ export class Logger implements ILogger {
 
 // Determine log level from environment
 function getLogLevelFromEnv(): LogLevel {
-  const envLevel = process.env.LOG_LEVEL?.toLowerCase();
-  if (envLevel === "off") return "off";
-  if (envLevel === "prod" || envLevel === "production") return "prod";
-  if (envLevel === "debug" || envLevel === "development") return "debug";
-
-  // Default based on NODE_ENV
-  return process.env.NODE_ENV === "production" ? "prod" : "debug";
+  return env.LOG_LEVEL ?? "prod";
 }
 
-const defaultLogLevel = getLogLevelFromEnv();
-
-// Pre-configured logger instances for common use cases
-export const middlewareLogger = new Logger("Middleware", defaultLogLevel);
-export const authLogger = new Logger("Auth", defaultLogLevel);
-export const dbLogger = new Logger("Database", defaultLogLevel);
-export const apiLogger = new Logger("API", defaultLogLevel);
-export const scriptLogger = new Logger("Script", defaultLogLevel);
-
-// Example of customized logger
-export const middlewareCustomLogger = new Logger("Middleware", "debug", {
-  customMethods: {
-    "auth-check": {
-      color: chalk.magenta,
-      type: "AUTH_STATE",
-    },
-    "route-match": {
-      color: chalk.yellow,
-      type: "ROUTING",
-    },
-    rewrite: {
-      color: chalk.green,
-      type: "REWRITE",
-    },
-  },
-});
+export const defaultLogLevel = getLogLevelFromEnv();
 
 // Utility function to create a logger with custom settings
 export function createLogger(

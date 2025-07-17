@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { api } from "~/trpc/server";
 import { EditPage as ThEditPage } from "./core";
 import PresentationNotFound from "~/components/prnotfound";
-import Unauthorized from "~/components/unauth";
 import auth from "#auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, unauthorized } from "next/navigation";
 
 interface Props {
   params: Promise<{
@@ -55,7 +54,7 @@ export default async function EditPage({ params }: Props) {
   }
 
   if (authData.user.id !== data.ownerId) {
-    return <Unauthorized edit />;
+    unauthorized();
   }
 
   return (

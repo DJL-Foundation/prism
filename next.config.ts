@@ -92,4 +92,10 @@ const sentryconfig = withSentryConfig(config, {
 
 import withVercelToolbar from "@vercel/toolbar/plugins/next";
 
-export default withVercelToolbar()(sentryconfig);
+const toolBarConfig = withVercelToolbar()(sentryconfig);
+
+import { withBotId } from "botid/next/config";
+
+const botIdConfig = withBotId(toolBarConfig);
+
+export default botIdConfig;

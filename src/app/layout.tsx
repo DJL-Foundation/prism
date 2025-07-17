@@ -11,6 +11,7 @@ import { ThemeProvider } from "~/components/theme-provider";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { BotIdClient } from "botid/client";
 
 import { extractRouterConfig } from "uploadthing/server";
 import { UploadthingRouter } from "./api/uploadthing/core";
@@ -98,6 +99,34 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${GeistSans.variable} antialiased`}>
         <TRPCReactProvider>
+          <BotIdClient
+            protect={[
+              {
+                path: "/api/trpc/*",
+                method: "GET",
+              },
+              {
+                path: "/api/trpc/*",
+                method: "POST",
+              },
+              {
+                path: "/api/auth/*",
+                method: "GET",
+              },
+              {
+                path: "/api/auth/*",
+                method: "POST",
+              },
+              {
+                path: "/api/uploadthing/*",
+                method: "GET",
+              },
+              {
+                path: "/api/uploadthing/*",
+                method: "POST",
+              },
+            ]}
+          />
           <PostHogProvider>
             <NextSSRPlugin
               routerConfig={extractRouterConfig(UploadthingRouter)}

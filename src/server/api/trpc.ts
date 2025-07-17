@@ -9,6 +9,7 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import { checkBotId } from "botid/server";
 
 import { db } from "~/server/db";
 import auth from "#auth";
@@ -153,6 +154,18 @@ const cronMiddleware = t.middleware(async ({ ctx, next }) => {
   return next();
 });
 
+const botIdMiddleware = t.middleware(async ({ ctx: _ctx, next }) => {
+  const botId = await checkBotId();
+
+  if (botId.isBot) {
+    throw new Error(
+      "Unauthorized: Bots are not allowed to access this endpoint",
+    );
+  }
+
+  return next();
+});
+
 /**
  * Public (unauthenticated) procedure
  *
@@ -160,7 +173,11 @@ const cronMiddleware = t.middleware(async ({ ctx, next }) => {
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure.use(timingMiddleware);
+export const publicProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(botIdMiddleware);
+
+export const publicProcedureBotsAllowed = t.procedure.use(timingMiddleware);
 
 /**
  * Protected procedure
@@ -170,6 +187,7 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  */
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
+  .use(botIdMiddleware)
   .use(protectMiddleware);
 
 /**
@@ -180,6 +198,7 @@ export const protectedProcedure = t.procedure
  */
 export const proTierProcedure = t.procedure
   .use(timingMiddleware)
+  .use(botIdMiddleware)
   .use(proTierMiddleware);
 
 /**
@@ -190,6 +209,7 @@ export const proTierProcedure = t.procedure
  */
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
+  .use(botIdMiddleware)
   .use(adminMiddleware);
 
 /**
