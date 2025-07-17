@@ -25,6 +25,7 @@ export function isStaticRoute(pathname: string): boolean {
 export const STATIC_ROUTES = [
   "api",
   "api/2well2know/oauth-authorization-server",
+  "api/2well2know/oauth-protected-resource",
   "api/2well2know/vercel/flags",
   "api/cron/transfers",
   "api/og/imagegen",
@@ -81,6 +82,7 @@ export const ALL_PATHS = [
   "/wordmark.png",
   "api",
   "api/2well2know/oauth-authorization-server",
+  "api/2well2know/oauth-protected-resource",
   "api/2well2know/vercel/flags",
   "api/cron/transfers",
   "api/og/imagegen",
@@ -232,6 +234,14 @@ export const ALL_ROUTES = [
     isApi: true,
     isDynamic: false,
     segments: ["api", "2well2know", "oauth-authorization-server"]
+  },
+  {
+    path: "/api/2well2know/oauth-protected-resource",
+    isPage: false,
+    isLayout: false,
+    isApi: true,
+    isDynamic: false,
+    segments: ["api", "2well2know", "oauth-protected-resource"]
   },
   {
     path: "/api/auth/[...all]",
@@ -419,6 +429,7 @@ export const forbiddenNames = [
   "anonymous",
   "api",
   "api/2well2know/oauth-authorization-server",
+  "api/2well2know/oauth-protected-resource",
   "api/2well2know/vercel/flags",
   "api/cron/transfers",
   "api/og/imagegen",

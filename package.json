@@ -22,15 +22,18 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006 --no-open",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "mcp": "mcp-inspector"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@better-auth-kit/legal-consent": "^1.1.1",
+    "@emotion/styled": "^11.14.1",
     "@flags-sdk/posthog": "^0.1.0",
     "@hookform/resolvers": "^5.1.1",
+    "@mui/icons-material": "^7.2.0",
     "@neondatabase/serverless": "^1.0.1",
     "@prisma/client": "^6.12.0",
     "@prisma/extension-read-replicas": "^0.4.1",
@@ -120,6 +123,7 @@
   "devDependencies": {
     "@chromatic-com/storybook": "^4.0.1",
     "@eslint/eslintrc": "^3.3.1",
+    "@modelcontextprotocol/inspector": "^0.16.1",
     "@next/eslint-plugin-next": "^15.4.1",
     "@storybook/addon-a11y": "^9.0.17",
     "@storybook/addon-docs": "^9.0.17",
