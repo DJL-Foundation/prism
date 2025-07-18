@@ -1,10 +1,11 @@
-import { readdirSync, statSync, writeFileSync } from "fs";
+import { readdirSync, statSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
 // Path configurations
 const APP_DIR = "./src/app";
 const PUBLIC_DIR = "./public";
 const OUTPUT_FILE = "./src/lib/routes.generated.ts";
+const ROUTE_MATCHERS_FILE = "./src/lib/route-matchers.ts";
 const FORBIDDEN_TEMPLATE = "../src/lib/forbidden.template.ts";
 const BYPASS_TEMPLATE = "../src/lib/bypass.template.ts";
 
@@ -15,8 +16,71 @@ interface RouteInfo {
   isApi: boolean;
   isDynamic: boolean;
   segments: string[];
+  category?: string;
 }
 
+/**
+ * Create route-matchers.ts file if it doesn't exist
+ */
+function ensureRouteMatchersFile(): void {
+  const content = `import { type NextRequest } from "next/server";
+
+export function createRouteMatcher(patterns: string[]) {
+  const regexes = patterns.map((pattern) => new RegExp(pattern));
+
+  return (request: NextRequest) => {
+    const { pathname } = request.nextUrl;
+    return regexes.some((regex) => regex.test(pathname));
+  };
+}
+
+export function isStaticRoute(pathname: string): boolean {
+  const cleanPath = pathname.startsWith("/") ? pathname.substring(1) : pathname;
+  const firstSegment = cleanPath.split("/")[0];
+  if (!firstSegment) return false;
+  // Note: STATIC_ROUTES will be imported from routes.generated.ts
+  // This is handled in the generated file to avoid circular imports
+  return false;
+}
+
+/**
+ * Common route patterns - these are manually maintained patterns
+ * that complement the auto-generated category-based matchers
+ */
+
+export const isAuth = createRouteMatcher([
+  "/sign-in(.*)",
+  "/sign-up(.*)", 
+  "/pricing(.*)",
+  "/waitlist(.*)",
+  "/profile(.*)",
+]);
+
+export const isManagement = createRouteMatcher([
+  "/manage(.*)",
+  "/edit/(.*)", 
+  "/create(.*)",
+]);
+
+export const isLegal = createRouteMatcher(["/terms(.*)", "/privacy(.*)"]);
+
+export const isOrgManagement = createRouteMatcher([
+  "/org/create(.*)",
+  "/org/settings(.*)",
+  "/profile/select(.*)",
+]);
+
+export const isOrgRedirect = createRouteMatcher(["/org"]);
+export const isSettingsRoute = createRouteMatcher(["/settings"]);
+export const isManageRoute = createRouteMatcher(["/manage"]);
+export const isRootRoute = createRouteMatcher(["^/$"]);`;
+
+  const routeMatchersExists = existsSync(ROUTE_MATCHERS_FILE);
+  if (!routeMatchersExists) {
+    writeFileSync(ROUTE_MATCHERS_FILE, content, "utf8");
+    console.log(`✅ Created route matchers lib file: ${ROUTE_MATCHERS_FILE}`);
+  }
+}
 /**
  * Recursively scan the public directory to get all static assets
  */
@@ -50,7 +114,11 @@ function scanPublicDirectory(dir: string, basePath = ""): string[] {
 /**
  * Recursively scan the app directory and extract all routes
  */
-function scanAppDirectory(dir: string, basePath = ""): RouteInfo[] {
+function scanAppDirectory(
+  dir: string,
+  basePath = "",
+  category?: string,
+): RouteInfo[] {
   const routes: RouteInfo[] = [];
 
   try {
@@ -63,12 +131,13 @@ function scanAppDirectory(dir: string, basePath = ""): RouteInfo[] {
       if (stat.isDirectory()) {
         // Handle route groups (folders in parentheses)
         if (entry.startsWith("(") && entry.endsWith(")")) {
-          // Route groups don't affect the URL path
-          routes.push(...scanAppDirectory(fullPath, basePath));
+          // Route groups don't affect the URL path but define a category
+          const categoryName = entry.slice(1, -1); // Remove parentheses
+          routes.push(...scanAppDirectory(fullPath, basePath, categoryName));
         } else {
           // Regular folder - becomes part of the URL
           const newPath = basePath ? `${basePath}/${entry}` : `/${entry}`;
-          routes.push(...scanAppDirectory(fullPath, newPath));
+          routes.push(...scanAppDirectory(fullPath, newPath, category));
         }
       } else if (stat.isFile()) {
         // Check if it's a route file
@@ -94,6 +163,7 @@ function scanAppDirectory(dir: string, basePath = ""): RouteInfo[] {
             isApi,
             isDynamic,
             segments,
+            category,
           });
         }
       }
@@ -128,6 +198,37 @@ function extractStaticPaths(routes: RouteInfo[]): string[] {
   }
 
   return Array.from(staticPaths).sort();
+}
+
+/**
+ * Generate category arrays and route matchers
+ */
+function generateCategoryData(routes: RouteInfo[]): {
+  categories: Map<string, string[]>;
+  categorizedRoutes: Map<string, RouteInfo[]>;
+} {
+  const categories = new Map<string, string[]>();
+  const categorizedRoutes = new Map<string, RouteInfo[]>();
+
+  for (const route of routes) {
+    if (route.category && route.isPage) {
+      // Add to category path arrays
+      if (!categories.has(route.category)) {
+        categories.set(route.category, []);
+        categorizedRoutes.set(route.category, []);
+      }
+
+      categories.get(route.category)!.push(route.path);
+      categorizedRoutes.get(route.category)!.push(route);
+    }
+  }
+
+  // Sort paths within each category
+  for (const [category, paths] of categories) {
+    categories.set(category, paths.sort());
+  }
+
+  return { categories, categorizedRoutes };
 }
 
 /**
@@ -170,16 +271,7 @@ async function loadBypassTemplate(): Promise<string[]> {
  */
 function generateRouteMatcherFunction(): string {
   return `
-import { type NextRequest } from "next/server";
-
-export function createRouteMatcher(patterns: string[]) {
-  const regexes = patterns.map((pattern) => new RegExp(pattern));
-
-  return (request: NextRequest) => {
-    const { pathname } = request.nextUrl;
-    return regexes.some((regex) => regex.test(pathname));
-  };
-}
+import { createRouteMatcher } from "~/lib/route-matchers";
 
 export function isStaticRoute(pathname: string): boolean {
   const cleanPath = pathname.startsWith("/") ? pathname.substring(1) : pathname;
@@ -191,6 +283,33 @@ export function isStaticRoute(pathname: string): boolean {
 }
 
 /**
+ * Generate category route matchers
+ */
+function generateCategoryMatchers(categories: Map<string, string[]>): string {
+  let categoryContent = "";
+
+  // Generate category arrays
+  for (const [category, paths] of categories) {
+    const categoryVarName = `${category}Routes`;
+    categoryContent += `\n/**\n * Routes in the (${category}) category\n */\nexport const ${categoryVarName} = [\n`;
+    categoryContent += paths.map((path) => `  "${path}"`).join(",\n");
+    categoryContent += `\n] as const;\n`;
+  }
+
+  // Generate category route matchers
+  for (const [category, paths] of categories) {
+    const matcherName = `is${category.charAt(0).toUpperCase() + category.slice(1)}Route`;
+    categoryContent += `\n/**\n * Route matcher for ${category} routes\n */\nexport const ${matcherName} = createRouteMatcher([\n`;
+    categoryContent += paths
+      .map((path) => `  "${path}(.*)"${path === "/" ? " // Root route" : ""}`)
+      .join(",\n");
+    categoryContent += `\n]);\n`;
+  }
+
+  return categoryContent;
+}
+
+/**
  * Generate the output file
  */
 async function generateRoutesFile(routes: RouteInfo[]): Promise<void> {
@@ -198,6 +317,7 @@ async function generateRoutesFile(routes: RouteInfo[]): Promise<void> {
   const forbiddenTemplate = await loadForbiddenTemplate();
   const bypassTemplate = await loadBypassTemplate();
   const publicPaths = scanPublicDirectory(PUBLIC_DIR);
+  const { categories } = generateCategoryData(routes);
 
   const allForbiddenNames = Array.from(
     new Set([...staticPaths, ...forbiddenTemplate]),
@@ -211,14 +331,22 @@ async function generateRoutesFile(routes: RouteInfo[]): Promise<void> {
   const allPaths = Array.from(new Set([...staticPaths, ...publicPaths])).sort();
 
   // Extract first segments from all paths for intelligent route matching
-  const firstSegments = Array.from(
+  const firstSegments: string[] = Array.from(
     new Set(
       allPaths
-        .filter((path) => path && !path.startsWith("/"))
+        .filter(
+          (path) => typeof path === "string" && path && !path.startsWith("/"),
+        )
         .map((path) => path.split("/")[0])
-        .filter((segment) => segment && segment.length > 0),
+        .filter(
+          (segment) =>
+            typeof segment === "string" && segment && segment.length > 0,
+        ) as string[],
     ),
   ).sort();
+
+  // Ensure route-matchers.ts lib file exists
+  ensureRouteMatchersFile();
 
   const content = `// This file is auto-generated by scripts/route-matchers.ts
 // Do not edit manually - run "bun scripts/route-matchers.ts" to regenerate
@@ -272,7 +400,8 @@ ${routes
     isLayout: ${route.isLayout},
     isApi: ${route.isApi},
     isDynamic: ${route.isDynamic},
-    segments: [${route.segments.map((s) => `"${s}"`).join(", ")}]
+    segments: [${route.segments.map((s) => `"${s}"`).join(", ")}],
+    category: ${route.category ? `"${route.category}"` : "undefined"}
   }`,
   )
   .join(",\n")}
@@ -285,30 +414,7 @@ export const forbiddenNames = [
 ${allForbiddenNames.map((name) => `  "${name}"`).join(",\n")}
 ];
 
-/**
- * Route matchers for common route patterns
- */
-export const isAuth = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)", 
-  "/pricing(.*)",
-  "/waitlist(.*)",
-  "/profile(.*)",
-]);
-
-export const isManagement = createRouteMatcher([
-  "/manage(.*)",
-  "/edit/(.*)", 
-  "/create(.*)",
-]);
-
-export const isLegal = createRouteMatcher(["/terms(.*)", "/privacy(.*)"]);
-
-export const isOrgManagement = createRouteMatcher([
-  "/org/create(.*)",
-  "/org/settings(.*)",
-  "/profile/select(.*)",
-]);
+${generateCategoryMatchers(categories)}
 
 /**
  * Bypass matcher - instantly passes through middleware
@@ -318,39 +424,30 @@ export const isBypass = createRouteMatcher(BYPASS_ROUTES.map(route =>
 ));
 
 /**
- * Pro presentation matcher - matches /!shortname
+ * Dynamic route matchers that use FIRST_SEGMENTS for intelligent routing
  */
 export const isProPresentation = createRouteMatcher(["/!([^/]+)"]);
 
-/**
- * User profile matcher - matches single paths that are NOT in first segments
- */
 export const isUserProfile = createRouteMatcher([
   "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)$"
 ]);
 
-/**
- * Free presentation matcher - matches /username/shortname where username is NOT in first segments
- */
 export const isFreePresentation = createRouteMatcher([
   "^/(?!" + FIRST_SEGMENTS.join("|") + ")([^/!]+)/([^/]+)$"
 ]);
-export const isOrgRedirect = createRouteMatcher(["/org"]);
-export const isSettingsRoute = createRouteMatcher(["/settings"]);
-export const isManageRoute = createRouteMatcher(["/manage"]);
-export const isRootRoute = createRouteMatcher(["^/$"]);
 
 // Legacy matchers for backwards compatibility
 export const isPaidPresentation = isProPresentation;
 export const isFreeTier = isFreePresentation;
-
-// Org-specific matcher (same as user profile for single paths)
 export const isOrgPresentation = isUserProfile;
 `;
 
   writeFileSync(OUTPUT_FILE, content, "utf8");
   console.log(`✅ Generated routes file: ${OUTPUT_FILE}`);
   console.log(`📊 Found ${routes.length} routes`);
+  console.log(
+    `🗂️  Found ${categories.size} categories: ${Array.from(categories.keys()).join(", ")}`,
+  );
   console.log(`🚫 Generated ${allForbiddenNames.length} forbidden names`);
   console.log(`📁 Static routes: ${staticPaths.join(", ")}`);
   console.log(`🔄 Bypass routes: ${allBypassPaths.length} routes`);
@@ -384,3 +481,6 @@ export function runRouteMatcherGeneration() {
     process.exit(1);
   });
 }
+
+// Run the script
+runRouteMatcherGeneration();

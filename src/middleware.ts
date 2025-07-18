@@ -5,13 +5,15 @@ import {
   isManagement,
   isLegal,
   isOrgManagement,
-  isFreePresentation,
-  isUserProfile,
-  isProPresentation,
   isOrgRedirect,
   isSettingsRoute,
   isManageRoute,
   isRootRoute,
+} from "~/lib/route-matchers";
+import {
+  isFreePresentation,
+  isUserProfile,
+  isProPresentation,
   isBypass,
   forbiddenNames,
 } from "~/lib/routes.generated";
