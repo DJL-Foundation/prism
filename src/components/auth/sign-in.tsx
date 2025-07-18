@@ -1,7 +1,8 @@
+"use client";
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import authClient from "#auth/client";
-import { Card, CardContent, CardHeader } from "../ui/card";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { motion } from "motion/react";
 import { Button } from "../ui/button";
 import { KeyRound } from "lucide-react";
@@ -9,134 +10,266 @@ import GoogleIcon from "@mui/icons-material/Google";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import Link from "next/link";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { LabeledSeparator } from "../ui/separator";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { Checkbox } from "../ui/checkbox";
 
 type FormData = Parameters<typeof authClient.signIn.email>[0];
 
 const test = null as unknown as FormData;
 
-const MotionCard = motion.create(Card);
 const MotionButton = motion.create(Button);
 const MotionLabel = motion.create(Label);
 const MotionInput = motion.create(Input);
 
 export default function SignIn() {
+  const [hovered, setHovered] = useState<
+    "Passkey" | "Google" | "GitHub" | "email"
+  >("email");
+
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors },
-  } = useForm<FormData>();
+  } = useForm<FormData>({
+    defaultValues: {
+      rememberMe: true,
+    },
+    resolver: zodResolver(
+      z.object({
+        email: z.string().email("Invalid email address"),
+        password: z
+          .string()
+          .min(6, "Password must be at least 6 characters long")
+          .max(128, "Password must be at most 128 characters long"),
+        rememberMe: z.boolean().optional(),
+      }),
+    ),
+  });
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     await authClient.signIn.email({
       email: data.email,
       password: data.password,
+      rememberMe: data.rememberMe,
     });
   };
 
   async function passkeyAuth() {
     const data = await authClient.signIn.passkey();
-    console.log("Passkey Auth Data:", data);
+    void data;
   }
 
   async function googleAuth() {
     const data = await authClient.signIn.social({
       provider: "google",
     });
-    console.log("Google Auth Data:", data);
+    void data;
   }
 
   async function githubAuth() {
     const data = await authClient.signIn.social({
       provider: "github",
     });
-    console.log("GitHub Auth Data:", data);
+    void data;
   }
 
+  useEffect(() => {
+    PublicKeyCredential.isConditionalMediationAvailable?.()
+      .then((isAvailable) => {
+        if (!isAvailable) {
+          return;
+        }
+
+        void authClient.signIn.passkey({ autoFill: true });
+      })
+      .catch((error) => {
+        console.error("Error checking passkey availability:", error);
+      });
+  });
+
+  useEffect(() => {
+    void authClient.oneTap();
+  });
+
   return (
-    <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <h2 className="text-2xl font-bold">Sign In</h2>
-        </CardHeader>
-        <CardContent className="pt-0 pb-8 px-6">
-          <motion.section className="p-2">
-            <MotionButton
-              variant="outline"
-              className="py-2 w-full"
-              onClick={passkeyAuth}
-            >
-              <KeyRound className="mr-0" />
-              using Passkey
-            </MotionButton>
-            <div className="flex items-center justify-center py-2 mx-2">
-              <MotionButton
-                variant="outline"
-                className="py-2 w-full mx-1"
-                onClick={googleAuth}
+    <div className="flex flex-col items-center justify-between bg-background px-4 py-12">
+      <div className="w-full flex-grow flex flex-col items-center justify-center">
+        <div className="w-full mx-auto">
+          {/* Header */}
+          <div className="text-center space-y-2 mx-auto mb-8">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={48}
+              height={48}
+              className="mx-auto mb-4"
+            />
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Welcome back!
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Don&apos;t have an account yet?{" "}
+              <Link
+                href="/sign-up"
+                className="underline underline-offset-4 hover:text-primary"
+                prefetch
               >
-                <GoogleIcon className="mr-2" />
-                Google
-              </MotionButton>
-              <MotionButton
-                variant="outline"
-                className="py-2 w-full mx-1"
-                onClick={githubAuth}
-              >
-                <GitHubIcon className="mr-2" />
-                GitHub
-              </MotionButton>
-            </div>
-          </motion.section>
-          <motion.form onSubmit={handleSubmit(onSubmit)} className="mt-6">
+                Sign up now
+              </Link>
+            </p>
+          </div>
+
+          <div className="space-y-4 max-w-md mx-auto">
+            {/* Social Sign In */}
             <div>
-              <MotionLabel
-                htmlFor="email"
-                className="block text-sm font-medium"
+              <MotionButton
+                variant="outline"
+                className="w-full h-11 font-normal"
+                onClick={passkeyAuth}
+                onMouseEnter={() => setHovered("Passkey")}
+                onMouseLeave={() => setHovered("email")}
               >
-                Email
-              </MotionLabel>
-              <MotionInput
-                id="email"
-                placeholder="Enter your email"
-                className="mt-1 block w-full"
-                {...register("email", {
-                  required: "Email is required",
-                })}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.email.message}
-                </p>
-              )}
+                <KeyRound className="mr-2 h-4 w-4" />
+                Continue with Passkey
+              </MotionButton>
+
+              <div className="flex py-2 space-x-2">
+                <MotionButton
+                  variant="outline"
+                  className="w-full h-11 font-normal"
+                  onClick={googleAuth}
+                  onMouseEnter={() => setHovered("Google")}
+                  onMouseLeave={() => setHovered("email")}
+                >
+                  <GoogleIcon className="mr-2 h-4 w-4" />
+                  Google
+                </MotionButton>
+
+                <MotionButton
+                  variant="outline"
+                  className="w-full h-11 font-normal"
+                  onClick={githubAuth}
+                  onMouseEnter={() => setHovered("GitHub")}
+                  onMouseLeave={() => setHovered("email")}
+                >
+                  <GitHubIcon className="mr-2 h-4 w-4" />
+                  GitHub
+                </MotionButton>
+              </div>
             </div>
-            <div className="mt-4">
-              <MotionLabel
-                htmlFor="password"
-                className="block text-sm font-medium"
+
+            {/* Divider */}
+            <LabeledSeparator label="Or continue with email" />
+
+            {/* Email Form */}
+            <motion.form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-2"
+            >
+              <div className="space-y-2">
+                <MotionLabel htmlFor="email" className="text-sm font-medium">
+                  Email
+                </MotionLabel>
+                <MotionInput
+                  id="email"
+                  placeholder="Type your email"
+                  className="h-11"
+                  {...register("email", {
+                    required: "Email is required",
+                  })}
+                  autoComplete="email webauthn"
+                />
+                {errors.email && (
+                  <p className="text-destructive text-sm">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <MotionLabel htmlFor="password" className="text-sm font-medium">
+                  Password
+                </MotionLabel>
+                <MotionInput
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  className="h-11"
+                  {...register("password", {
+                    required: "Password is required",
+                  })}
+                  autoComplete="current-password webauthn"
+                />
+                {errors.password && (
+                  <p className="text-destructive text-sm">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2">
+                  <Controller
+                    name="rememberMe"
+                    control={control}
+                    render={({ field }) => (
+                      <>
+                        <Checkbox
+                          id="rememberMe"
+                          onCheckedChange={field.onChange}
+                          checked={field.value}
+                        />
+                        <Label htmlFor="rememberMe">Remember me</Label>
+                      </>
+                    )}
+                  />
+                </div>
+                <MotionButton
+                  variant="link"
+                  className="text-sm p-0 h-auto"
+                  asChild
+                >
+                  <Link href="/forgot-password" prefetch>
+                    Forgot password?
+                  </Link>
+                </MotionButton>
+              </div>
+
+              <MotionButton
+                type="submit"
+                variant="default"
+                className="w-full h-11 mt-2"
               >
-                Password
-              </MotionLabel>
-              <MotionInput
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                className="mt-1 block w-full"
-                {...register("password", {
-                  required: "Password is required",
-                })}
-              />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-            <MotionButton type="submit" className="mt-6 w-full">
-              Sign In
-            </MotionButton>
-          </motion.form>
-        </CardContent>
-      </Card>
+                Continue with email
+              </MotionButton>
+            </motion.form>
+          </div>
+        </div>
+      </div>
+      {/* Terms - Forced to bottom */}
+      <div className="text-center text-xs text-muted-foreground mt-8">
+        By clicking &quot;Continue with {hovered}&quot; <br />
+        you agree to our{" "}
+        <Link
+          href="/terms"
+          className="underline underline-offset-4 hover:text-primary"
+        >
+          Terms of Use
+        </Link>{" "}
+        and{" "}
+        <Link
+          href="/privacy"
+          className="underline underline-offset-4 hover:text-primary"
+        >
+          Privacy Policy
+        </Link>
+      </div>
     </div>
   );
 }
