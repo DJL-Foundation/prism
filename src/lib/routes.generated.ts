@@ -531,6 +531,14 @@ export const legalRoutes = [
 ] as const;
 
 /**
+ * Route matcher for legal routes
+ */
+export const isLegalRoute = createRouteMatcher([
+  "/privacy(.*)",
+  "/terms(.*)"
+]);
+
+/**
  * Routes in the (auth) category
  */
 export const authRoutes = [
@@ -540,14 +548,6 @@ export const authRoutes = [
   "/sign-up/[[...sign-up]]",
   "/waitlist"
 ] as const;
-
-/**
- * Route matcher for legal routes
- */
-export const isLegalRoute = createRouteMatcher([
-  "/privacy(.*)",
-  "/terms(.*)"
-]);
 
 /**
  * Route matcher for auth routes

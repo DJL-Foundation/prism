@@ -1,3 +1,4 @@
+// #region Imports
 import { type NextMiddleware, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import {
@@ -23,7 +24,9 @@ import {
 } from "~/lib/internal-verification";
 import { defaultLogLevel, Logger } from "./lib/logging";
 import chalk from "chalk";
+// #endregion Imports
 
+// #region Middleware Logger
 const middlewareLogger = new Logger("Middleware", defaultLogLevel, {
   customMethods: {
     "auth-check": {
@@ -40,7 +43,9 @@ const middlewareLogger = new Logger("Middleware", defaultLogLevel, {
     },
   },
 });
+// #endregion Middleware Logger
 
+// #region Idea
 // Future Routing Structure
 // Based on example routes
 // example-org
@@ -117,7 +122,9 @@ const middlewareLogger = new Logger("Middleware", defaultLogLevel, {
  * - - /create
  * - / // Presentation View, Hero, Home and more...
  */
+// #endregion Idea
 
+// #region Helper Functions
 function isOrg(hostname: string) {
   const baseDomain = ".pr.djl.foundation";
   return hostname.endsWith(baseDomain) && hostname !== `pr${baseDomain}`;
@@ -146,7 +153,9 @@ function setInternalVerification(response: NextResponse): void {
   // Set verification header
   response.headers.set("x-internal-no-evict", headerHash);
 }
+// #endregion Helper Functions
 
+// #region Custom Router
 function customRouter(): NextMiddleware {
   return async (request) => {
     const {
@@ -161,6 +170,7 @@ function customRouter(): NextMiddleware {
       `Incoming request: Original Hostname=${originalHostname}, Pathname=${pathname}, SearchParams=${searchParams.toString()}`,
     );
 
+    // #region Bypass Logic
     // Fast bypass for static assets and specified routes
     if (isBypass(request)) {
       middlewareLogger.debug(
@@ -170,6 +180,7 @@ function customRouter(): NextMiddleware {
       return NextResponse.next();
     }
 
+    // #region Should Process
     // Check if this request matches any of our routing patterns that need auth
     const needsAuth =
       isManagement(request) ||
@@ -207,6 +218,7 @@ function customRouter(): NextMiddleware {
 
     let redirectBaseOrigin: string;
 
+    // #region Development Logic
     if (isDev(originalHostname)) {
       middlewareLogger.info(`DX: Detected development or preview environment.`);
       redirectBaseOrigin = `${protocol}://${originalHostname}${port}`;
@@ -240,6 +252,7 @@ function customRouter(): NextMiddleware {
       );
     }
 
+    // #region AuthData
     // Simple cookie-based auth check using Better Auth's recommended approach
     const sessionCookie = getSessionCookie(request);
     const isSignedIn = !!sessionCookie;
@@ -250,6 +263,7 @@ function customRouter(): NextMiddleware {
       `Session cookie exists: ${isSignedIn}`,
     );
 
+    // #region Redirects
     // Handle basic redirects first
     if (isOrgRedirect(request)) {
       middlewareLogger.info("Handling /org redirect");
@@ -262,6 +276,7 @@ function customRouter(): NextMiddleware {
       return NextResponse.redirect(targetUrl);
     }
 
+    // #region Management Routes
     // Handle management routes - require auth
     if (isManagement(request)) {
       middlewareLogger.info("Handling Management route: protecting.");
@@ -274,6 +289,7 @@ function customRouter(): NextMiddleware {
       }
     }
 
+    // #region Organisations
     // Handle org subdomain logic
     if (isOrg(effectiveHostname)) {
       middlewareLogger.info("Handling custom domains/orgs (rewrites)");
@@ -281,7 +297,9 @@ function customRouter(): NextMiddleware {
         middlewareLogger.info("Org root path");
         const orgSlugFromEffectiveHostname = effectiveHostname.split(".")[0];
 
+        // #region Org SignedIn
         if (isSignedIn) {
+          // NOTE: THIS ISNT COMPLETELY IMPLEMENTED YET
           // Redirect to check route to verify org membership
           const targetUrl = new URL(
             `/api/internal/org-check/${orgSlugFromEffectiveHostname}`,
@@ -294,6 +312,7 @@ function customRouter(): NextMiddleware {
           middlewareLogger.end("Request handled - org check redirect");
           return NextResponse.redirect(targetUrl);
         } else {
+          // #region Org Profile
           // Not signed in users see profile page
           const response = NextResponse.rewrite(
             new URL(
@@ -311,6 +330,7 @@ function customRouter(): NextMiddleware {
           return response;
         }
       } else if (isUserProfile(request)) {
+        // #region Org Presentation
         middlewareLogger.info("Org presentation path");
         const shortname = pathname.substring(1);
         middlewareLogger.debug(`Extracted shortname: ${shortname}`);
@@ -339,6 +359,7 @@ function customRouter(): NextMiddleware {
       }
     }
 
+    // #region User Profiles
     // Handle user profile routes
     if (isUserProfile(request)) {
       middlewareLogger.custom(
@@ -367,6 +388,7 @@ function customRouter(): NextMiddleware {
       return response;
     }
 
+    // #region Free Tier Presentations
     // Handle free tier routes
     if (isFreePresentation(request)) {
       middlewareLogger.custom(
@@ -404,6 +426,7 @@ function customRouter(): NextMiddleware {
       return response;
     }
 
+    // #region Pro Tier Presentations
     // Handle pro tier routes
     if (isProPresentation(request)) {
       middlewareLogger.custom(
@@ -433,6 +456,7 @@ function customRouter(): NextMiddleware {
       return response;
     }
 
+    // #region ROOT ROUTE
     // Handle root route
     if (isRootRoute(request)) {
       middlewareLogger.custom(
@@ -440,6 +464,7 @@ function customRouter(): NextMiddleware {
         "ROUTING",
         "Handling Root Route (main domain)",
       );
+      // #region Root Domain Hero
       if (!isSignedIn) {
         const response = NextResponse.rewrite(
           new URL("/internal/hero/B2C", request.url),
@@ -453,6 +478,7 @@ function customRouter(): NextMiddleware {
         middlewareLogger.end("Request handled - rewrite");
         return response;
       }
+      // #region Signed In User Home
       const response = NextResponse.rewrite(
         new URL(`/internal/home/user`, request.url),
       );

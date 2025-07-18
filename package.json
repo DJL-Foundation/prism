@@ -23,13 +23,14 @@
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build",
-    "mcp": "mcp-inspector"
+    "mcp": "mcp-inspector",
+    "auth:generate": "cli generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@better-auth-kit/legal-consent": "^1.1.1",
+    "@effect/platform-bun": "^0.74.0",
     "@emotion/styled": "^11.14.1",
     "@flags-sdk/posthog": "^0.1.0",
     "@hookform/resolvers": "^5.1.1",
@@ -121,6 +122,7 @@
     "zod": "^4.0.5"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.2.12",
     "@chromatic-com/storybook": "^4.0.1",
     "@eslint/eslintrc": "^3.3.1",
     "@modelcontextprotocol/inspector": "^0.16.1",

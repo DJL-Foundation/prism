@@ -1,29 +1,156 @@
-import { readdirSync, statSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { Effect, Console, Array, String, pipe, Data } from "effect";
+import { FileSystem } from "@effect/platform";
+import { Path } from "@effect/platform";
+import { BunRuntime, BunContext } from "@effect/platform-bun";
 
-// Path configurations
+// #region Model
+interface RouteInfo {
+  readonly path: string;
+  readonly isPage: boolean;
+  readonly isLayout: boolean;
+  readonly isApi: boolean;
+  readonly isDynamic: boolean;
+  readonly segments: readonly string[];
+  readonly category?: string;
+}
+
+class FSError extends Data.TaggedError("FSError")<{
+  readonly error: unknown;
+}> {}
+
+class TemplateError extends Data.TaggedError("TemplateError")<{
+  readonly error: unknown;
+}> {}
+// #endregion
+
+// #region Configuration
 const APP_DIR = "./src/app";
 const PUBLIC_DIR = "./public";
 const OUTPUT_FILE = "./src/lib/routes.generated.ts";
 const ROUTE_MATCHERS_FILE = "./src/lib/route-matchers.ts";
-const FORBIDDEN_TEMPLATE = "../src/lib/forbidden.template.ts";
-const BYPASS_TEMPLATE = "../src/lib/bypass.template.ts";
+const FORBIDDEN_TEMPLATE_PATH = "../src/lib/forbidden.template.ts";
+const BYPASS_TEMPLATE_PATH = "../src/lib/bypass.template.ts";
+// #endregion
 
-interface RouteInfo {
-  path: string;
-  isPage: boolean;
-  isLayout: boolean;
-  isApi: boolean;
-  isDynamic: boolean;
-  segments: string[];
-  category?: string;
-}
+// #region Services
+const scanPublicDirectory = (
+  dir: string,
+  basePath = "",
+): Effect.Effect<string[], FSError, FileSystem.FileSystem | Path.Path> =>
+  Effect.gen(function* (_) {
+    const fs = yield* _(FileSystem.FileSystem);
+    const path = yield* _(Path.Path);
+    const entries = yield* _(
+      fs.readDirectory(dir),
+      Effect.mapError((error) => new FSError({ error })),
+    );
 
-/**
- * Create route-matchers.ts file if it doesn't exist
- */
-function ensureRouteMatchersFile(): void {
-  const content = `import { type NextRequest } from "next/server";
+    const results = yield* _(
+      Effect.forEach(
+        entries,
+        (entry) => {
+          const newPath = basePath ? `${basePath}/${entry}` : `/${entry}`;
+          const fullPath = path.join(dir, entry);
+          return Effect.gen(function* (_) {
+            const stat = yield* _(
+              fs.stat(fullPath),
+              Effect.mapError((error) => new FSError({ error })),
+            );
+            if (stat.type === "Directory") {
+              return yield* _(scanPublicDirectory(fullPath, newPath));
+            }
+            return [newPath];
+          });
+        },
+        { concurrency: "inherit" },
+      ),
+    );
+
+    return Array.flatten(results);
+  });
+
+const scanAppDirectory = (
+  dir: string,
+  basePath = "",
+  category?: string,
+): Effect.Effect<RouteInfo[], FSError, FileSystem.FileSystem | Path.Path> =>
+  Effect.gen(function* (_) {
+    const fs = yield* _(FileSystem.FileSystem);
+    const path = yield* _(Path.Path);
+    const entries = yield* _(
+      fs.readDirectory(dir),
+      Effect.mapError((error) => new FSError({ error })),
+    );
+
+    const results = yield* _(
+      Effect.forEach(
+        entries,
+        (entry) => {
+          const fullPath = path.join(dir, entry);
+          return Effect.gen(function* (_) {
+            const stat = yield* _(
+              fs.stat(fullPath),
+              Effect.mapError((error) => new FSError({ error })),
+            );
+            if (stat.type === "Directory") {
+              if (entry.startsWith("(") && entry.endsWith(")")) {
+                const categoryName = entry.slice(1, -1);
+                return yield* _(
+                  scanAppDirectory(fullPath, basePath, categoryName),
+                );
+              }
+              const newPath = basePath ? `${basePath}/${entry}` : `/${entry}`;
+              return yield* _(scanAppDirectory(fullPath, newPath, category));
+            }
+
+            const isPage =
+              entry.includes("page.tsx") ||
+              entry.includes("page.ts") ||
+              entry.includes("page.js");
+            const isLayout =
+              entry.includes("layout.tsx") ||
+              entry.includes("layout.ts") ||
+              entry.includes("layout.js");
+            const isApi =
+              entry.includes("route.tsx") ||
+              entry.includes("route.ts") ||
+              entry.includes("route.js");
+
+            if (isPage || isLayout || isApi) {
+              const segments = basePath.split("/").filter(Boolean);
+              const isDynamic = segments.some(
+                (s) => s.startsWith("[") && s.endsWith("]"),
+              );
+              const route: RouteInfo = {
+                path: basePath || "/",
+                isPage,
+                isLayout,
+                isApi,
+                isDynamic,
+                segments,
+                category,
+              };
+              return [route];
+            }
+
+            return [];
+          });
+        },
+        { concurrency: "inherit" },
+      ),
+    );
+
+    return Array.flatten(results);
+  });
+
+const AppLayer = BunContext.layer;
+// #endregion
+
+// #region Logic
+const ensureRouteMatchersFile = () =>
+  Effect.gen(function* (_) {
+    const fs = yield* _(FileSystem.FileSystem);
+    const content = `import { type NextRequest } from "next/server";
 
 export function createRouteMatcher(patterns: string[]) {
   const regexes = patterns.map((pattern) => new RegExp(pattern));
@@ -75,202 +202,91 @@ export const isSettingsRoute = createRouteMatcher(["/settings"]);
 export const isManageRoute = createRouteMatcher(["/manage"]);
 export const isRootRoute = createRouteMatcher(["^/$"]);`;
 
-  const routeMatchersExists = existsSync(ROUTE_MATCHERS_FILE);
-  if (!routeMatchersExists) {
-    writeFileSync(ROUTE_MATCHERS_FILE, content, "utf8");
-    console.log(`✅ Created route matchers lib file: ${ROUTE_MATCHERS_FILE}`);
-  }
-}
-/**
- * Recursively scan the public directory to get all static assets
- */
-function scanPublicDirectory(dir: string, basePath = ""): string[] {
-  const publicPaths: string[] = [];
+    const exists = yield* _(
+      fs.exists(ROUTE_MATCHERS_FILE),
+      Effect.mapError((error) => new FSError({ error })),
+    );
+    if (!exists) {
+      yield* _(
+        fs.writeFileString(ROUTE_MATCHERS_FILE, content),
+        Effect.zipRight(
+          Console.log(
+            `✅ Created route matchers lib file: ${ROUTE_MATCHERS_FILE}`,
+          ),
+        ),
+        Effect.mapError((error) => new FSError({ error })),
+      );
+    }
+  });
 
-  try {
-    const entries = readdirSync(dir);
-
-    for (const entry of entries) {
-      const fullPath = join(dir, entry);
-      const stat = statSync(fullPath);
-
-      if (stat.isDirectory()) {
-        // Recurse into subdirectories
-        const newPath = basePath ? `${basePath}/${entry}` : `/${entry}`;
-        publicPaths.push(...scanPublicDirectory(fullPath, newPath));
-      } else if (stat.isFile()) {
-        // Add file path
-        const filePath = basePath ? `${basePath}/${entry}` : `/${entry}`;
-        publicPaths.push(filePath);
+const extractStaticPaths = (routes: readonly RouteInfo[]): readonly string[] =>
+  pipe(
+    routes,
+    Array.filter((route: RouteInfo) => route.isPage || route.isApi),
+    Array.flatMap((route: RouteInfo) => {
+      const firstSegment = route.segments[0];
+      const staticPaths: string[] = [];
+      if (firstSegment && !firstSegment.startsWith("[")) {
+        staticPaths.push(firstSegment);
       }
-    }
-  } catch (error) {
-    console.warn(`Warning: Could not scan public directory ${dir}:`, error);
-  }
-
-  return publicPaths;
-}
-
-/**
- * Recursively scan the app directory and extract all routes
- */
-function scanAppDirectory(
-  dir: string,
-  basePath = "",
-  category?: string,
-): RouteInfo[] {
-  const routes: RouteInfo[] = [];
-
-  try {
-    const entries = readdirSync(dir);
-
-    for (const entry of entries) {
-      const fullPath = join(dir, entry);
-      const stat = statSync(fullPath);
-
-      if (stat.isDirectory()) {
-        // Handle route groups (folders in parentheses)
-        if (entry.startsWith("(") && entry.endsWith(")")) {
-          // Route groups don't affect the URL path but define a category
-          const categoryName = entry.slice(1, -1); // Remove parentheses
-          routes.push(...scanAppDirectory(fullPath, basePath, categoryName));
-        } else {
-          // Regular folder - becomes part of the URL
-          const newPath = basePath ? `${basePath}/${entry}` : `/${entry}`;
-          routes.push(...scanAppDirectory(fullPath, newPath, category));
-        }
-      } else if (stat.isFile()) {
-        // Check if it's a route file
-        const isPage =
-          entry === "page.tsx" || entry === "page.ts" || entry === "page.js";
-        const isLayout =
-          entry === "layout.tsx" ||
-          entry === "layout.ts" ||
-          entry === "layout.js";
-        const isApi =
-          entry === "route.tsx" || entry === "route.ts" || entry === "route.js";
-
-        if (isPage || isLayout || isApi) {
-          const segments = basePath.split("/").filter(Boolean);
-          const isDynamic = segments.some(
-            (segment) => segment.startsWith("[") && segment.endsWith("]"),
-          );
-
-          routes.push({
-            path: basePath || "/",
-            isPage,
-            isLayout,
-            isApi,
-            isDynamic,
-            segments,
-            category,
-          });
-        }
+      if (!route.isDynamic && route.path !== "/") {
+        staticPaths.push(route.path.substring(1));
       }
-    }
-  } catch (error) {
-    console.warn(`Warning: Could not scan directory ${dir}:`, error);
-  }
+      return staticPaths;
+    }),
+    Array.dedupe,
+    (arr) => globalThis.Array.from(arr).sort(),
+  );
 
-  return routes;
-}
-
-/**
- * Extract static route segments that could conflict with usernames
- */
-function extractStaticPaths(routes: RouteInfo[]): string[] {
-  const staticPaths = new Set<string>();
-
-  for (const route of routes) {
-    // Only consider routes that are pages or APIs (not just layouts)
-    if (!route.isPage && !route.isApi) continue;
-
-    // Extract first segment of static routes
-    const firstSegment = route.segments[0];
-    if (firstSegment && !firstSegment.startsWith("[")) {
-      staticPaths.add(firstSegment);
-    }
-
-    // Also add full static paths for more specific matching
-    if (!route.isDynamic && route.path !== "/") {
-      staticPaths.add(route.path.substring(1)); // Remove leading slash
-    }
-  }
-
-  return Array.from(staticPaths).sort();
-}
-
-/**
- * Generate category arrays and route matchers
- */
-function generateCategoryData(routes: RouteInfo[]): {
-  categories: Map<string, string[]>;
-  categorizedRoutes: Map<string, RouteInfo[]>;
-} {
+const generateCategoryData = (
+  routes: readonly RouteInfo[],
+): ReadonlyMap<string, readonly string[]> => {
   const categories = new Map<string, string[]>();
-  const categorizedRoutes = new Map<string, RouteInfo[]>();
-
   for (const route of routes) {
     if (route.category && route.isPage) {
-      // Add to category path arrays
       if (!categories.has(route.category)) {
         categories.set(route.category, []);
-        categorizedRoutes.set(route.category, []);
       }
-
       categories.get(route.category)!.push(route.path);
-      categorizedRoutes.get(route.category)!.push(route);
     }
   }
-
-  // Sort paths within each category
   for (const [category, paths] of categories) {
-    categories.set(category, paths.sort());
+    categories.set(category, globalThis.Array.from(paths).sort());
   }
+  return categories;
+};
 
-  return { categories, categorizedRoutes };
-}
+const loadTemplate = (
+  path: string,
+  templateKey: string,
+): Effect.Effect<readonly string[], TemplateError> =>
+  Effect.tryPromise({
+    try: () => import(path),
+    catch: (error) => new TemplateError({ error }),
+  }).pipe(
+    Effect.map((mod: Record<string, unknown>) => {
+      const value = mod[templateKey];
+      return globalThis.Array.isArray(value) ? (value as string[]) : [];
+    }),
+    Effect.catchTag("TemplateError", (e) =>
+      Console.warn(
+        `Could not load template from ${path}, using empty array:`,
+        e.error,
+      ).pipe(Effect.as<readonly string[]>([])),
+    ),
+  );
 
-/**
- * Load forbidden names from template file
- */
-async function loadForbiddenTemplate(): Promise<string[]> {
-  try {
-    // Import the template file using dynamic import
-    const templateModule = (await import(FORBIDDEN_TEMPLATE)) as {
-      forbiddenNamesTemplate: string[];
-    };
-    return templateModule.forbiddenNamesTemplate || [];
-  } catch (error) {
-    console.warn(
-      "Could not load forbidden template, using empty array:",
-      error,
-    );
-    return [];
-  }
-}
+const loadForbiddenTemplate = loadTemplate(
+  FORBIDDEN_TEMPLATE_PATH,
+  "forbiddenNamesTemplate",
+);
+const loadBypassTemplate = loadTemplate(
+  BYPASS_TEMPLATE_PATH,
+  "bypassRoutesTemplate",
+);
 
-/**
- * Load bypass routes from template file
- */
-async function loadBypassTemplate(): Promise<string[]> {
-  try {
-    // Import the template file using dynamic import
-    const templateModule = (await import(BYPASS_TEMPLATE)) as {
-      bypassRoutesTemplate: string[];
-    };
-    return templateModule.bypassRoutesTemplate || [];
-  } catch (error) {
-    console.warn("Could not load bypass template, using empty array:", error);
-    return [];
-  }
-}
-
-/**
- * Generate route matcher function
- */
-function generateRouteMatcherFunction(): string {
-  return `
+const generateRouteMatcherFunction = (): string =>
+  `
 import { createRouteMatcher } from "~/lib/route-matchers";
 
 export function isStaticRoute(pathname: string): boolean {
@@ -280,75 +296,74 @@ export function isStaticRoute(pathname: string): boolean {
   return (STATIC_ROUTES as readonly string[]).includes(firstSegment) || (STATIC_ROUTES as readonly string[]).includes(cleanPath);
 }
 `.trim();
-}
 
-/**
- * Generate category route matchers
- */
-function generateCategoryMatchers(categories: Map<string, string[]>): string {
+const generateCategoryMatchers = (
+  categories: ReadonlyMap<string, readonly string[]>,
+): string => {
   let categoryContent = "";
-
-  // Generate category arrays
   for (const [category, paths] of categories) {
     const categoryVarName = `${category}Routes`;
     categoryContent += `\n/**\n * Routes in the (${category}) category\n */\nexport const ${categoryVarName} = [\n`;
-    categoryContent += paths.map((path) => `  "${path}"`).join(",\n");
+    categoryContent += globalThis.Array.from(paths)
+      .map((path) => `  "${path}"`)
+      .join(",\n");
     categoryContent += `\n] as const;\n`;
-  }
 
-  // Generate category route matchers
-  for (const [category, paths] of categories) {
     const matcherName = `is${category.charAt(0).toUpperCase() + category.slice(1)}Route`;
     categoryContent += `\n/**\n * Route matcher for ${category} routes\n */\nexport const ${matcherName} = createRouteMatcher([\n`;
-    categoryContent += paths
+    categoryContent += globalThis.Array.from(paths)
       .map((path) => `  "${path}(.*)"${path === "/" ? " // Root route" : ""}`)
       .join(",\n");
     categoryContent += `\n]);\n`;
   }
-
   return categoryContent;
-}
+};
 
-/**
- * Generate the output file
- */
-async function generateRoutesFile(routes: RouteInfo[]): Promise<void> {
-  const staticPaths = extractStaticPaths(routes);
-  const forbiddenTemplate = await loadForbiddenTemplate();
-  const bypassTemplate = await loadBypassTemplate();
-  const publicPaths = scanPublicDirectory(PUBLIC_DIR);
-  const { categories } = generateCategoryData(routes);
+const generateRoutesFile = (
+  routes: readonly RouteInfo[],
+  publicPaths: readonly string[],
+  forbiddenTemplate: readonly string[],
+  bypassTemplate: readonly string[],
+): Effect.Effect<void, FSError, FileSystem.FileSystem> =>
+  Effect.gen(function* (_) {
+    const fs = yield* _(FileSystem.FileSystem);
+    const staticPaths = extractStaticPaths(routes);
+    const categories = generateCategoryData(routes);
 
-  const allForbiddenNames = Array.from(
-    new Set([...staticPaths, ...forbiddenTemplate]),
-  ).sort();
+    const allForbiddenNames: readonly string[] = pipe(
+      [...staticPaths, ...forbiddenTemplate],
+      Array.dedupe,
+      (arr) => globalThis.Array.from(arr).sort(),
+    );
 
-  const allBypassPaths = Array.from(
-    new Set([...publicPaths, ...bypassTemplate]),
-  ).sort();
+    const allBypassPaths: readonly string[] = pipe(
+      [...publicPaths, ...bypassTemplate],
+      Array.dedupe,
+      (arr) => globalThis.Array.from(arr).sort(),
+    );
 
-  // Add public paths to the ALL_PATHS array for comprehensive route tracking
-  const allPaths = Array.from(new Set([...staticPaths, ...publicPaths])).sort();
+    const allPaths: readonly string[] = pipe(
+      [...staticPaths, ...publicPaths],
+      Array.dedupe,
+      (arr) => globalThis.Array.from(arr).sort(),
+    );
 
-  // Extract first segments from all paths for intelligent route matching
-  const firstSegments: string[] = Array.from(
-    new Set(
-      allPaths
-        .filter(
-          (path) => typeof path === "string" && path && !path.startsWith("/"),
-        )
-        .map((path) => path.split("/")[0])
-        .filter(
-          (segment) =>
-            typeof segment === "string" && segment && segment.length > 0,
-        ) as string[],
-    ),
-  ).sort();
+    const firstSegments: readonly string[] = pipe(
+      allPaths,
+      Array.filter(
+        (path: string): path is string =>
+          String.isString(path) && path.length > 0 && !path.startsWith("/"),
+      ),
+      Array.map((path: string) => path.split("/")[0]),
+      Array.filter(
+        (segment: string | undefined): segment is string =>
+          String.isString(segment) && segment.length > 0,
+      ),
+      Array.dedupe,
+      (arr) => globalThis.Array.from(arr).sort(),
+    );
 
-  // Ensure route-matchers.ts lib file exists
-  ensureRouteMatchersFile();
-
-  const content = `// This file is auto-generated by scripts/route-matchers.ts
+    const content = `// This file is auto-generated by scripts/route-matchers.ts
 // Do not edit manually - run "bun scripts/route-matchers.ts" to regenerate
 
 ${generateRouteMatcherFunction()}
@@ -442,45 +457,80 @@ export const isFreeTier = isFreePresentation;
 export const isOrgPresentation = isUserProfile;
 `;
 
-  writeFileSync(OUTPUT_FILE, content, "utf8");
-  console.log(`✅ Generated routes file: ${OUTPUT_FILE}`);
-  console.log(`📊 Found ${routes.length} routes`);
-  console.log(
-    `🗂️  Found ${categories.size} categories: ${Array.from(categories.keys()).join(", ")}`,
+    yield* _(
+      fs.writeFileString(OUTPUT_FILE, content),
+      Effect.zipRight(Console.log(`✅ Generated routes file: ${OUTPUT_FILE}`)),
+      Effect.zipRight(Console.log(`📊 Found ${routes.length} routes`)),
+      Effect.zipRight(
+        Console.log(
+          `🗂️  Found ${categories.size} categories: ${globalThis.Array.from(categories.keys()).join(", ")}`,
+        ),
+      ),
+      Effect.zipRight(
+        Console.log(`🚫 Generated ${allForbiddenNames.length} forbidden names`),
+      ),
+      Effect.zipRight(
+        Console.log(`📁 Static routes: ${staticPaths.join(", ")}`),
+      ),
+      Effect.zipRight(
+        Console.log(`🔄 Bypass routes: ${allBypassPaths.length} routes`),
+      ),
+      Effect.zipRight(
+        Console.log(`📋 Public assets: ${publicPaths.length} files`),
+      ),
+      Effect.mapError((error) => new FSError({ error })),
+    );
+  });
+// #endregion
+
+// #region Main
+const main = Effect.gen(function* (_) {
+  yield* _(Console.log("🔍 Scanning app directory for routes..."));
+
+  const scanResults = yield* _(
+    Effect.all(
+      [
+        scanAppDirectory(APP_DIR),
+        scanPublicDirectory(PUBLIC_DIR),
+        loadForbiddenTemplate,
+        loadBypassTemplate,
+      ],
+      { concurrency: "inherit" },
+    ),
   );
-  console.log(`🚫 Generated ${allForbiddenNames.length} forbidden names`);
-  console.log(`📁 Static routes: ${staticPaths.join(", ")}`);
-  console.log(`🔄 Bypass routes: ${allBypassPaths.length} routes`);
-  console.log(`📋 Public assets: ${publicPaths.length} files`);
-}
 
-/**
- * Main execution
- */
-async function main() {
-  console.log("🔍 Scanning app directory for routes...");
-
-  const routes = scanAppDirectory(APP_DIR);
+  const [routes, publicPaths, forbiddenTemplate, bypassTemplate] = scanResults;
 
   if (routes.length === 0) {
-    console.error("❌ No routes found. Check if APP_DIR is correct:", APP_DIR);
-    process.exit(1);
+    return yield* _(
+      Effect.fail(
+        new Error(
+          `❌ No routes found. Check if APP_DIR is correct: ${APP_DIR}`,
+        ),
+      ),
+    );
   }
 
-  await generateRoutesFile(routes);
-
-  console.log("✅ Route matchers generated successfully!");
-  console.log(
-    "💡 Import from: import { isUserProfile, forbiddenNames } from '~/lib/routes.generated'",
+  yield* _(ensureRouteMatchersFile());
+  yield* _(
+    generateRoutesFile(routes, publicPaths, forbiddenTemplate, bypassTemplate),
   );
-}
+
+  yield* _(Console.log("✅ Route matchers generated successfully!"));
+  yield* _(
+    Console.log(
+      "💡 Import from: import { isUserProfile, forbiddenNames } from '~/lib/routes.generated'",
+    ),
+  );
+}).pipe(
+  Effect.catchAll((error) =>
+    Console.error("Error generating route matchers:", error),
+  ),
+);
+
+const runnable = Effect.provide(main, AppLayer);
 
 export function runRouteMatcherGeneration() {
-  main().catch((error) => {
-    console.error("Error generating route matchers:", error);
-    process.exit(1);
-  });
+  BunRuntime.runMain(runnable);
 }
-
-// Run the script
-runRouteMatcherGeneration();
+// #endregion
