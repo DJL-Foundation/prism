@@ -1,16 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ThemeToggle } from "./theme-toggle";
-import { Button } from "./ui/button";
+import { ThemeToggle } from "../theme-toggle";
+import { Button } from "../ui/button";
 // import authClient from "#auth/client";
 // import { use } from "react";
 
 export default function Header() {
-  const userButtonAppearance = {
-    elements: {
-      userButtonAvatarBox: "w-10 h-10",
-    },
-  };
   // const authData = use(authClient.getSession()).data;
 
   return (

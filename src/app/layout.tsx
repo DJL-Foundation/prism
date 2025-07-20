@@ -4,8 +4,8 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import type React from "react";
 import type { Metadata } from "next";
-import Header from "~/components/header";
-import Footer from "~/components/footer";
+import Header from "~/components/layout/header";
+import Footer from "~/components/layout/footer";
 import { ThemeProvider } from "~/components/theme-provider";
 
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
@@ -18,6 +18,8 @@ import { UploadthingRouter } from "./api/uploadthing/core";
 import { Toaster } from "~/components/ui/sonner";
 import { PostHogProvider } from "~/server/providers";
 import env from "~/env";
+import { getSessionCookie } from "better-auth/cookies";
+import { headers } from "next/headers";
 
 // Implement Metadata Images TODO
 export const metadata: Metadata = {
@@ -90,10 +92,12 @@ export const metadata: Metadata = {
   classification: "Presentation Foundation",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const shouldShowVercelToolbar = env.NODE_ENV === "development";
+  const header = await headers();
+  const signedIn = getSessionCookie(header);
 
   return (
     <html lang="en">

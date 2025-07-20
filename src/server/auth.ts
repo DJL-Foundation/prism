@@ -17,7 +17,6 @@ import { db } from "#db";
 import env from "#env";
 import { forbiddenNames } from "../lib/constants";
 import { ac, admin, proUser, user } from "./permisions";
-import { legalConsent } from "@better-auth-kit/legal-consent";
 import { nextCookies } from "better-auth/next-js";
 import ms from "ms";
 import argon2 from "argon2";
@@ -146,12 +145,6 @@ const auth = betterAuth({
       currentURL: env.HOST_URL,
     }),
     openAPI(),
-    legalConsent({
-      requireTOS: true,
-      requirePrivacyPolicy: true,
-      requireMarketingConsent: true,
-      requireCookieConsent: true,
-    }),
     nextCookies(),
   ],
   user: {
@@ -225,3 +218,4 @@ const auth = betterAuth({
 });
 
 export default auth;
+// export { auth };

@@ -256,6 +256,42 @@ const generateCategoryData = (
   return categories;
 };
 
+const convertNextPathToRegex = (path: string): string => {
+  // Special case for root-level optional catch-all, e.g., /[[...slug]]
+  if (/^\/\[\[\.\.\..+?\]\]$/.test(path)) {
+    return "^/.*$";
+  }
+
+  const regexString = path
+    .split("/")
+    .map((segment) => {
+      if (segment.startsWith("[[...") && segment.endsWith("]]")) {
+        // This is handled below as it affects the whole path from this point
+        return segment;
+      }
+      if (segment.startsWith("[...") && segment.endsWith("]")) {
+        return ".*"; // Matches everything from this point
+      }
+      if (segment.startsWith("[") && segment.endsWith("]")) {
+        return "[^/]+"; // Matches one segment
+      }
+      return segment; // Static segment
+    })
+    .join("/");
+
+  // Handle the optional catch-all `[[...]]` which makes the rest of the path optional
+  const optionalCatchAllMarker = "/[[...";
+  const optionalCatchAllIndex = regexString.indexOf(optionalCatchAllMarker);
+
+  if (optionalCatchAllIndex !== -1) {
+    const basePath = regexString.substring(0, optionalCatchAllIndex);
+    // The base path itself can be a valid route, and anything after it is also valid.
+    return `^${basePath}(?:/.*)?$`;
+  }
+
+  return `^${regexString}$`;
+};
+
 const loadTemplate = (
   path: string,
   templateKey: string,
@@ -312,7 +348,7 @@ const generateCategoryMatchers = (
     const matcherName = `is${category.charAt(0).toUpperCase() + category.slice(1)}Route`;
     categoryContent += `\n/**\n * Route matcher for ${category} routes\n */\nexport const ${matcherName} = createRouteMatcher([\n`;
     categoryContent += globalThis.Array.from(paths)
-      .map((path) => `  "${path}(.*)"${path === "/" ? " // Root route" : ""}`)
+      .map((path) => `  "${convertNextPathToRegex(path)}"`)
       .join(",\n");
     categoryContent += `\n]);\n`;
   }

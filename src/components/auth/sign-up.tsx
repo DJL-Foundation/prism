@@ -1,6 +1,8 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
+
+/*
 import authClient from "#auth/client";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { motion } from "motion/react";
@@ -17,28 +19,33 @@ import { LabeledSeparator } from "../ui/separator";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Checkbox } from "../ui/checkbox";
-import { useSearchParams } from "next/navigation";
 
-type FormData = Parameters<typeof authClient.signIn.email>[0];
+type FormData = Parameters<typeof authClient.signUp.email>[0];
+
+const test = null as unknown as FormData;
+void test.username;
+void test.email;
+void test.password;
+void test.displayUsername;
+void test.image; // If then only in settings
+void test.callbackURL;
 
 const MotionButton = motion.create(Button);
 const MotionLabel = motion.create(Label);
 const MotionInput = motion.create(Input);
 
-export default function SignIn() {
+export default function SignUp() {
   const [hovered, setHovered] = useState<
     "Passkey" | "Google" | "GitHub" | "email"
   >("email");
-  const searchParams = useSearchParams();
+
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
   } = useForm<FormData>({
-    defaultValues: {
-      rememberMe: true,
-    },
+    defaultValues: {},
     resolver: zodResolver(
       z.object({
         email: z.string().email("Invalid email address"),
@@ -46,7 +53,6 @@ export default function SignIn() {
           .string()
           .min(6, "Password must be at least 6 characters long")
           .max(128, "Password must be at most 128 characters long"),
-        rememberMe: z.boolean().optional(),
       }),
     ),
   });
@@ -54,34 +60,17 @@ export default function SignIn() {
     await authClient.signIn.email({
       email: data.email,
       password: data.password,
-      rememberMe: data.rememberMe,
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
     });
   };
 
   async function passkeyAuth() {
-    const data = await authClient.signIn.passkey({
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
-    });
+    const data = await authClient.signIn.passkey();
     void data;
   }
 
   async function googleAuth() {
     const data = await authClient.signIn.social({
       provider: "google",
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
     });
     void data;
   }
@@ -89,11 +78,6 @@ export default function SignIn() {
   async function githubAuth() {
     const data = await authClient.signIn.social({
       provider: "github",
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
     });
     void data;
   }
@@ -105,14 +89,7 @@ export default function SignIn() {
           return;
         }
 
-        void authClient.signIn.passkey({
-          autoFill: true,
-          fetchOptions: {
-            onSuccess: (response) => {
-              window.location.href = searchParams.get("redirect_uri") ?? "/";
-            },
-          },
-        });
+        void authClient.signIn.passkey({ autoFill: true });
       })
       .catch((error) => {
         console.error("Error checking passkey availability:", error);
@@ -120,20 +97,14 @@ export default function SignIn() {
   });
 
   useEffect(() => {
-    void authClient.oneTap({
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
-    });
+    void authClient.oneTap();
   });
 
   return (
     <div className="flex flex-col items-center justify-between bg-background px-4 py-12">
       <div className="w-full flex-grow flex flex-col items-center justify-center">
         <div className="w-full mx-auto">
-          {/* Header */}
+          {/* Header */ /*} 
           <div className="text-center space-y-2 mx-auto mb-8">
             <Image
               src="/logo.png"
@@ -158,48 +129,36 @@ export default function SignIn() {
           </div>
 
           <div className="space-y-4 max-w-md mx-auto">
-            {/* Social Sign In */}
-            <div>
+            {/* Social Sign In */ /*}
+
+            <div className="flex py-2 space-x-2">
               <MotionButton
                 variant="outline"
                 className="w-full h-11 font-normal"
-                onClick={passkeyAuth}
-                onMouseEnter={() => setHovered("Passkey")}
+                onClick={googleAuth}
+                onMouseEnter={() => setHovered("Google")}
                 onMouseLeave={() => setHovered("email")}
               >
-                <KeyRound className="mr-2 h-4 w-4" />
-                Continue with Passkey
+                <GoogleIcon className="mr-2 h-4 w-4" />
+                Google
               </MotionButton>
 
-              <div className="flex py-2 space-x-2">
-                <MotionButton
-                  variant="outline"
-                  className="w-full h-11 font-normal"
-                  onClick={googleAuth}
-                  onMouseEnter={() => setHovered("Google")}
-                  onMouseLeave={() => setHovered("email")}
-                >
-                  <GoogleIcon className="mr-2 h-4 w-4" />
-                  Google
-                </MotionButton>
-
-                <MotionButton
-                  variant="outline"
-                  className="w-full h-11 font-normal"
-                  onClick={githubAuth}
-                  onMouseEnter={() => setHovered("GitHub")}
-                  onMouseLeave={() => setHovered("email")}
-                >
-                  <GitHubIcon className="mr-2 h-4 w-4" />
-                  GitHub
-                </MotionButton>
-              </div>
+              <MotionButton
+                variant="outline"
+                className="w-full h-11 font-normal"
+                onClick={githubAuth}
+                onMouseEnter={() => setHovered("GitHub")}
+                onMouseLeave={() => setHovered("email")}
+              >
+                <GitHubIcon className="mr-2 h-4 w-4" />
+                GitHub
+              </MotionButton>
             </div>
 
-            {/* Divider */}
+            {/* Divider */ /*}
             <LabeledSeparator label="Or continue with email" />
 
-            {/* Email Form */}
+            {/* Email Form */ /*}
             <motion.form
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-2"
@@ -245,7 +204,7 @@ export default function SignIn() {
                 )}
               </div>
 
-              {/* Remember Me & Forgot Password */}
+              {/* Remember Me & Forgot Password */ /*}
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center space-x-2">
                   <Controller
@@ -285,7 +244,7 @@ export default function SignIn() {
           </div>
         </div>
       </div>
-      {/* Terms - Forced to bottom */}
+      {/* Terms - Forced to bottom */ /*}
       <div className="text-center text-xs text-muted-foreground mt-8">
         By clicking &quot;Continue with {hovered}&quot; <br />
         you agree to our{" "}
@@ -306,3 +265,5 @@ export default function SignIn() {
     </div>
   );
 }
+
+*/

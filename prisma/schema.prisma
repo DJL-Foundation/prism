@@ -170,21 +170,17 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
-  username                 String?
-  displayUsername          String?
-  role                     String?
-  banned                   Boolean?
-  banReason                String?
-  banExpires               DateTime?
-  tosAccepted              Boolean
-  privacyPolicyAccepted    Boolean
-  marketingConsentAccepted Boolean
-  cookieConsentAccepted    Boolean
-  passkeys                 Passkey[]
-  members                  Member[]
-  invitations              Invitation[]
-  files                    files[]
-  presentations            presentations[]
+  username        String?
+  displayUsername String?
+  role            String?
+  banned          Boolean?
+  banReason       String?
+  banExpires      DateTime?
+  passkeys        Passkey[]
+  members         Member[]
+  invitations     Invitation[]
+  files           files[]
+  presentations   presentations[]
 
   @@unique([email])
   @@unique([username])

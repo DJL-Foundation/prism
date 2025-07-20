@@ -534,8 +534,8 @@ export const legalRoutes = [
  * Route matcher for legal routes
  */
 export const isLegalRoute = createRouteMatcher([
-  "/privacy(.*)",
-  "/terms(.*)"
+  "^/privacy$",
+  "^/terms$"
 ]);
 
 /**
@@ -553,11 +553,11 @@ export const authRoutes = [
  * Route matcher for auth routes
  */
 export const isAuthRoute = createRouteMatcher([
-  "/pricing(.*)",
-  "/profile/[[...user-profile]](.*)",
-  "/sign-in(.*)",
-  "/sign-up/[[...sign-up]](.*)",
-  "/waitlist(.*)"
+  "^/pricing$",
+  "^/profile(?:/.*)?$",
+  "^/sign-in$",
+  "^/sign-up(?:/.*)?$",
+  "^/waitlist$"
 ]);
 
 

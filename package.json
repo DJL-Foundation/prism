@@ -26,6 +26,27 @@
     "mcp": "mcp-inspector",
     "auth:generate": "cli generate"
   },
+  "imports": {
+    "#env": {
+      "default": "./src/env.js"
+    },
+    "#flags": {
+      "default": "./src/server/flags.ts"
+    },
+    "#utility": {
+      "default": "./src/server/utility.ts"
+    },
+    "#db": {
+      "default": "./src/server/db.ts"
+    },
+    "#auth": {
+      "default": "./src/server/auth.ts"
+    },
+    "#auth/client": {
+      "default": "./src/server/auth-client.ts",
+      "test": "./src/server/auth-client.mock.ts"
+    }
+  },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
