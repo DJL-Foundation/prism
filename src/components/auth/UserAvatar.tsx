@@ -35,14 +35,10 @@ const UserAvatar = React.forwardRef<HTMLDivElement, UserAvatarProps>(
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Avatar
-                ref={ref}
-                className={`w-16 h-16 ${className ?? ""}`}
-                {...props}
-              >
+              <Avatar ref={ref} className={cn("h-12 w-12", className)} {...props}>
                 <AvatarImage src={src ?? undefined} alt={name ?? undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-[#8A2BE2] to-[#4169E1] text-white flex items-center justify-center">
-                  <User className={cn("w-8 h-8", modify?.userIconSize)} />
+                  <User className={cn("w-6 h-6", modify?.userIconSize)} />
                 </AvatarFallback>
               </Avatar>
             </TooltipTrigger>
@@ -53,10 +49,10 @@ const UserAvatar = React.forwardRef<HTMLDivElement, UserAvatarProps>(
     }
 
     return (
-      <Avatar ref={ref} className={`w-16 h-16 ${className ?? ""}`} {...props}>
+      <Avatar ref={ref} className={cn("h-12 w-12", className)} {...props}>
         <AvatarImage src={src ?? undefined} alt={name ?? undefined} />
         <AvatarFallback className="bg-gradient-to-br from-[#8A2BE2] to-[#4169E1] text-white flex items-center justify-center">
-          <User className={cn("w-8 h-8", modify?.userIconSize)} />
+          <User className={cn("w-6 h-6", modify?.userIconSize)} />
         </AvatarFallback>
       </Avatar>
     );

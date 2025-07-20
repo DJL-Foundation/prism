@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
@@ -18,15 +20,20 @@ type UserData = typeof authClient.$Infer.Session;
 interface UserButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
   userdata: UserData;
   showName?: boolean;
+  modify?: {
+    forceOpenState?: boolean;
+  };
 }
 
 export default function UserButton({
   userdata,
   showName,
+  modify = {},
   ...props
 }: UserButtonProps) {
   const [isManaging, setIsManaging] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isOpen, setIsOpen] = useState(modify.forceOpenState ?? false);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -34,34 +41,39 @@ export default function UserButton({
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-10 w-10 rounded-full"
-          {...props}
-        >
+        <div className="flex items-center gap-2 cursor-pointer">
           {showName && (
-            <span className="absolute left-0 top-0 h-full w-full rounded-full text-foreground flex items-center justify-center">
+            <span className="text-sm font-medium text-foreground">
               {userdata.user.name}
             </span>
           )}
-          <UserAvatar
-            src={userdata.user.image}
-            name={userdata.user.username}
-            className="h-10 w-10"
-            modify={{
-              userIconSize: "h-10 w-10",
-            }}
-          />
-        </Button>
+          <Button
+            variant="ghost"
+            className="relative h-10 w-10 rounded-full"
+            {...props}
+          >
+            <UserAvatar
+              src={userdata.user.image}
+              name={userdata.user.username}
+              className="h-10 w-10"
+              modify={{
+                userIconSize: "h-8 w-8",
+              }}
+            />
+          </Button>
+        </div>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="end">
         <div className="flex items-center justify-start gap-2 p-4">
           <UserAvatar
             src={userdata.user.image}
             name={userdata.user.username}
-            className="h-10 w-10"
+            className="h-12 w-12"
+            modify={{
+              userIconSize: "h-7 w-7",
+            }}
           />
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
@@ -110,14 +122,15 @@ export default function UserButton({
   );
 }
 
-export function UserButtonSkeleton() {
+export function UserButtonSkeleton({
+  showName = false,
+}: {
+  showName?: boolean;
+}) {
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex items-center gap-2">
+      {showName && <Skeleton className="h-4 w-[100px]" />}
       <Skeleton className="h-10 w-10 rounded-full" />
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[100px]" />
-        <Skeleton className="h-4 w-[150px]" />
-      </div>
     </div>
   );
 }

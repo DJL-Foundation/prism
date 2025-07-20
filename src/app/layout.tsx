@@ -20,6 +20,7 @@ import { PostHogProvider } from "~/server/providers";
 import env from "~/env";
 import { getSessionCookie } from "better-auth/cookies";
 import { headers } from "next/headers";
+import authClient from "#auth/client";
 
 // Implement Metadata Images TODO
 export const metadata: Metadata = {
@@ -98,6 +99,7 @@ export default async function RootLayout({
   const shouldShowVercelToolbar = env.NODE_ENV === "development";
   const header = await headers();
   const signedIn = getSessionCookie(header);
+  const authData = await authClient.getSession({fetchOptions: { headers: header }});
 
   return (
     <html lang="en">
