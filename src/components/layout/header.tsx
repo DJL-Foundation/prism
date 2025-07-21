@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ThemeToggle } from "../theme-toggle";
 import { Button } from "../ui/button";
-import authClient from "#auth/client";
+import type authClient from "#auth/client";
 import { Skeleton } from "../ui/skeleton";
 import { Suspense } from "react";
 import UserButton, { UserButtonSkeleton } from "../auth/UserButton";
@@ -14,7 +14,7 @@ type userData = typeof authClient.$Infer.Session;
 
 interface HeaderProps {
   assumeSignedIn?: boolean | undefined; // For Suspense
-  authData?: userData | null;
+  authData: userData | null;
 }
 
 export default function Header({ assumeSignedIn, authData }: HeaderProps) {

@@ -37,13 +37,17 @@ export default function UserButton({
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
-    await authClient.signOut();
+    const result = await authClient.signOut();
+    void result;
   };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <div className="flex items-center gap-2 cursor-pointer">
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          data-testid="user-button-trigger"
+        >
           {showName && (
             <span className="text-sm font-medium text-foreground">
               {userdata.user.name}
@@ -65,7 +69,11 @@ export default function UserButton({
           </Button>
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="end">
+      <PopoverContent
+        className="w-64 p-0"
+        align="end"
+        data-testid="user-button-content"
+      >
         <div className="flex items-center justify-start gap-2 p-4">
           <UserAvatar
             src={userdata.user.image}
@@ -85,32 +93,39 @@ export default function UserButton({
           </div>
         </div>
         <div className="grid gap-1 p-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-            disabled={isManaging}
-            onClick={() => {
-              setIsManaging(true);
-            }}
-            asChild
-          >
-            <Link href="/account" prefetch>
+          <Link href="/account" prefetch passHref>
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              data-testid="user-button-manage-account"
+              disabled={isManaging}
+              onClick={() => {
+                setIsManaging(true);
+              }}
+            >
               {isManaging ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2
+                  className="mr-2 h-4 w-4 animate-spin"
+                  data-testid="user-button-manage-account-loadingState"
+                />
               ) : (
                 <Settings className="mr-2 h-4 w-4" />
               )}
               Manage account
-            </Link>
-          </Button>
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             className="w-full justify-start"
             onClick={handleSignOut}
             disabled={isSigningOut}
+            data-testid="user-button-sign-out"
           >
             {isSigningOut ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2
+                className="mr-2 h-4 w-4 animate-spin"
+                data-testid="user-button-sign-out-loadingState"
+              />
             ) : (
               <LogOut className="mr-2 h-4 w-4" />
             )}

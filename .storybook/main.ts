@@ -22,6 +22,14 @@ const config: StorybookConfig = {
         plugins: [tailwindcss],
       },
     };
+
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve?.alias,
+        "#auth/client": "../src/server/auth-client.mock.ts",
+        "../src/server/auth-client.ts": "../src/server/auth-client.mock.ts",
+      };
+    }
     return config;
   },
 };

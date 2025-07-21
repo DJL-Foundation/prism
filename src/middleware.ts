@@ -1,5 +1,5 @@
 // #region Imports
-import { type NextMiddleware, NextResponse } from "next/server";
+import { type NextMiddleware, NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import {
   isAuth,

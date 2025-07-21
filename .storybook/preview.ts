@@ -34,7 +34,7 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => {
-      const theme = context.globals.theme || "light";
+      const theme = context.globals.theme ?? "light";
 
       // Apply theme to document body and html
       if (typeof document !== "undefined") {

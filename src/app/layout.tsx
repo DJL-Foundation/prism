@@ -18,9 +18,8 @@ import { UploadthingRouter } from "./api/uploadthing/core";
 import { Toaster } from "~/components/ui/sonner";
 import { PostHogProvider } from "~/server/providers";
 import env from "~/env";
-import { getSessionCookie } from "better-auth/cookies";
-import { headers } from "next/headers";
 import authClient from "#auth/client";
+import posthog from "posthog-js";
 
 // Implement Metadata Images TODO
 export const metadata: Metadata = {
@@ -97,9 +96,9 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const shouldShowVercelToolbar = env.NODE_ENV === "development";
-  const header = await headers();
-  const signedIn = getSessionCookie(header);
-  const authData = await authClient.getSession({fetchOptions: { headers: header }});
+  const assumeSignedIn = posthog._isIdentified();
+  const authDataRequest = await authClient.getSession();
+  const authData = authDataRequest.data;
 
   return (
     <html lang="en">
@@ -133,7 +132,7 @@ export default async function RootLayout({
               },
             ]}
           />
-          <PostHogProvider>
+          <PostHogProvider userData={authData}>
             <NextSSRPlugin
               routerConfig={extractRouterConfig(UploadthingRouter)}
             />
@@ -145,7 +144,7 @@ export default async function RootLayout({
             >
               <Toaster />
               <div className="min-h-screen flex flex-col bg-background text-foreground">
-                <Header />
+                <Header assumeSignedIn={assumeSignedIn} authData={authData} />
                 <main className="grow">{children}</main>
                 <Footer />
               </div>

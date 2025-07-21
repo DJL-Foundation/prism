@@ -3,11 +3,19 @@
 import posthog from "posthog-js";
 import env from "#env";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
-import { Suspense, use, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-// import authClient from "#auth/client";
+import type authClient from "./auth-client";
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+type userData = typeof authClient.$Infer.Session;
+
+export function PostHogProvider({
+  children,
+  userData,
+}: {
+  children: React.ReactNode;
+  userData: userData | null;
+}) {
   useEffect(() => {
     posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
       api_host: "/ingest",
@@ -22,17 +30,16 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PHProvider client={posthog}>
-      <SuspendedPostHogPageView />
+      <SuspendedPostHogPageView userData={userData} />
       {children}
     </PHProvider>
   );
 }
 
-function PostHogPageView() {
+function PostHogPageView({ userData }: { userData: userData | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const posthog = usePostHog();
-  // const session = use(authClient.getSession());
 
   useEffect(() => {
     if (pathname && posthog) {
@@ -45,30 +52,30 @@ function PostHogPageView() {
     }
   }, [pathname, searchParams, posthog]);
 
-  // useEffect(() => {
-  //   // 👉 Check the sign-in status and user info,
-  //   //    and identify the user if they aren't already
-  //   if (session.data && !posthog._isIdentified()) {
-  //     // 👉 Identify the user
-  //     posthog.identify(session.data.user.id, {
-  //       email: session.data.user.email,
-  //       name: session.data.user.name,
-  //       username: session.data.user.username,
-  //     });
-  //   }
+  useEffect(() => {
+    // 👉 Check the sign-in status and user info,
+    //    and identify the user if they aren't already
+    if (userData && !posthog._isIdentified()) {
+      // 👉 Identify the user
+      posthog.identify(userData.user.id, {
+        email: userData.user.email,
+        name: userData.user.name,
+        username: userData.user.username,
+      });
+    }
 
-  //   if (!session.data && posthog._isIdentified()) {
-  //     posthog.reset();
-  //   }
-  // }, [posthog, session.data]);
+    if (!userData && posthog._isIdentified()) {
+      posthog.reset();
+    }
+  }, [posthog, userData]);
 
   return null;
 }
 
-function SuspendedPostHogPageView() {
+function SuspendedPostHogPageView({ userData }: { userData: userData | null }) {
   return (
     <Suspense fallback={null}>
-      <PostHogPageView />
+      <PostHogPageView userData={userData} />
     </Suspense>
   );
 }

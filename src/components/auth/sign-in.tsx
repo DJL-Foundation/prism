@@ -29,7 +29,6 @@ export default function SignIn() {
   const [hovered, setHovered] = useState<
     "Passkey" | "Google" | "GitHub" | "email"
   >("email");
-  const searchParams = useSearchParams();
   const {
     register,
     handleSubmit,
@@ -55,33 +54,17 @@ export default function SignIn() {
       email: data.email,
       password: data.password,
       rememberMe: data.rememberMe,
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
     });
   };
 
   async function passkeyAuth() {
-    const data = await authClient.signIn.passkey({
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
-    });
+    const data = await authClient.signIn.passkey({});
     void data;
   }
 
   async function googleAuth() {
     const data = await authClient.signIn.social({
       provider: "google",
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
     });
     void data;
   }
@@ -89,11 +72,6 @@ export default function SignIn() {
   async function githubAuth() {
     const data = await authClient.signIn.social({
       provider: "github",
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
     });
     void data;
   }
@@ -107,11 +85,6 @@ export default function SignIn() {
 
         void authClient.signIn.passkey({
           autoFill: true,
-          fetchOptions: {
-            onSuccess: (response) => {
-              window.location.href = searchParams.get("redirect_uri") ?? "/";
-            },
-          },
         });
       })
       .catch((error) => {
@@ -120,13 +93,7 @@ export default function SignIn() {
   });
 
   useEffect(() => {
-    void authClient.oneTap({
-      fetchOptions: {
-        onSuccess: (response) => {
-          window.location.href = searchParams.get("redirect_uri") ?? "/";
-        },
-      },
-    });
+    void authClient.oneTap({});
   });
 
   return (

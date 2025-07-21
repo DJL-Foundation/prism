@@ -4,10 +4,10 @@ type userData = typeof authClient.$Infer.Session;
 
 export const mockSessionData: userData = {
   user: {
-    name: "Jack Ruder",
-    email: "jack.ruder@example.com",
-    image: "https://github.com/jack-ruder.jpg",
-    username: "JackatDJL",
+    name: "Max Mustermann",
+    email: "max.mustermann@example.com",
+    image: "https://github.com/max-mustermann.jpg",
+    username: "MaxMustermann",
     id: "",
     emailVerified: false,
     createdAt: new Date(),
