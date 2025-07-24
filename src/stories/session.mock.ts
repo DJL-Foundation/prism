@@ -1,8 +1,6 @@
-import type authClient from "#auth/client";
+import { type AuthTypes } from "#auth/client";
 
-type userData = typeof authClient.$Infer.Session;
-
-export const mockSessionData: userData = {
+export const mockSessionData: AuthTypes.Session = {
   user: {
     name: "Max Mustermann",
     email: "max.mustermann@example.com",

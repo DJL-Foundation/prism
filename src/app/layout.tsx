@@ -1,11 +1,8 @@
-import { VercelToolbar } from "@vercel/toolbar/next";
 import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import type React from "react";
 import type { Metadata } from "next";
-import Header from "~/components/layout/header";
-import Footer from "~/components/layout/footer";
 import { ThemeProvider } from "~/components/theme-provider";
 
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
@@ -15,11 +12,12 @@ import { BotIdClient } from "botid/client";
 
 import { extractRouterConfig } from "uploadthing/server";
 import { UploadthingRouter } from "./api/uploadthing/core";
-import { Toaster } from "~/components/ui/sonner";
 import { PostHogProvider } from "~/server/providers";
 import env from "~/env";
 import authClient from "#auth/client";
 import posthog from "posthog-js";
+import LayoutContent from "~/components/layout-content";
+import { devModeFlag } from "#flags";
 
 // Implement Metadata Images TODO
 export const metadata: Metadata = {
@@ -99,6 +97,7 @@ export default async function RootLayout({
   const assumeSignedIn = posthog._isIdentified();
   const authDataRequest = await authClient.getSession();
   const authData = authDataRequest.data;
+  const beta = await devModeFlag();
 
   return (
     <html lang="en">
@@ -142,14 +141,15 @@ export default async function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <Toaster />
-              <div className="min-h-screen flex flex-col bg-background text-foreground">
-                <Header assumeSignedIn={assumeSignedIn} authData={authData} />
-                <main className="grow">{children}</main>
-                <Footer />
-              </div>
+              <LayoutContent
+                shouldShowVercelToolbar={shouldShowVercelToolbar}
+                assumeSignedIn={assumeSignedIn}
+                authData={authData}
+                beta={beta}
+              >
+                {children}
+              </LayoutContent>
             </ThemeProvider>
-            {shouldShowVercelToolbar && <VercelToolbar />}
           </PostHogProvider>
         </TRPCReactProvider>
       </body>

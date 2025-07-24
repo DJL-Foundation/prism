@@ -32,6 +32,8 @@
       "#db": ["./src/server/db.ts"],
       "#auth": ["./src/server/auth.ts"],
       "#auth/client": ["./src/server/auth-client.ts"],
+      "#auth/client.mock": ["./src/server/auth-client.mock.ts"],
+      "#storybook/*": ["./.storybook/*"],
       "~/*": ["./src/*"],
       "@/*": ["./*"],
     }

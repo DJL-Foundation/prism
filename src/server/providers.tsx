@@ -5,16 +5,14 @@ import env from "#env";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import type authClient from "./auth-client";
-
-type userData = typeof authClient.$Infer.Session;
+import { type AuthTypes } from "./auth-client";
 
 export function PostHogProvider({
   children,
   userData,
 }: {
   children: React.ReactNode;
-  userData: userData | null;
+  userData: AuthTypes.Session | null;
 }) {
   useEffect(() => {
     posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -36,7 +34,7 @@ export function PostHogProvider({
   );
 }
 
-function PostHogPageView({ userData }: { userData: userData | null }) {
+function PostHogPageView({ userData }: { userData: AuthTypes.Session | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const posthog = usePostHog();
@@ -72,7 +70,11 @@ function PostHogPageView({ userData }: { userData: userData | null }) {
   return null;
 }
 
-function SuspendedPostHogPageView({ userData }: { userData: userData | null }) {
+function SuspendedPostHogPageView({
+  userData,
+}: {
+  userData: AuthTypes.Session | null;
+}) {
   return (
     <Suspense fallback={null}>
       <PostHogPageView userData={userData} />

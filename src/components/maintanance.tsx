@@ -6,15 +6,15 @@ import { Button } from "~/components/ui/button";
 import { Home, ArrowLeft } from "react-feather";
 import { Wrench } from "lucide-react";
 
-interface MaintenanceProps {
+interface MaintananceProps {
   debug?: boolean;
   message: string;
 }
 
-export default function Maintenance({
+export default function Maintanance({
   debug = true,
   message,
-}: MaintenanceProps) {
+}: MaintananceProps) {
   return (
     <div className="container mx-auto px-4 py-16 min-h-[80vh] flex items-center justify-center">
       <motion.div
@@ -59,7 +59,7 @@ export default function Maintenance({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
         >
-          Page Under Maintenance
+          Page Under Maintanance
         </motion.h1>
 
         <motion.p

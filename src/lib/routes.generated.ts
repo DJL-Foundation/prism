@@ -52,7 +52,8 @@ export const PUBLIC_PATHS = [
   "/img/share.png",
   "/img/usb.png",
   "/placeholder.svg",
-  "/wordmark.png"
+  "/wordmark.png",
+  "/unclipped.svg"
 ] as const;
 
 /**
@@ -70,6 +71,7 @@ export const ALL_PATHS = [
   "/img/usb.png",
   "/logo.png",
   "/placeholder.svg",
+  "/unclipped.svg",
   "/wordmark.png",
   "api",
   "api/2well2know/oauth-authorization-server",
@@ -155,6 +157,7 @@ export const BYPASS_ROUTES = [
   "/robots.txt",
   "/sitemap.xml",
   "/status",
+  "/unclipped.svg",
   "/wordmark.png"
 ] as const;
 

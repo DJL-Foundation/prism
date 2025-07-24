@@ -6,8 +6,8 @@ import React from "react";
 import { GitHub, Mail, Navigation, Shield } from "react-feather";
 
 interface FooterProps extends React.HTMLAttributes<HTMLDivElement> {
-  beta?: boolean; // Shows beta badge
-  print?: boolean; // Print Styles and Full Text
+  beta: boolean; // Shows beta badge
+  print: boolean; // Print Styles and Full Text
 }
 
 export default function Footer({

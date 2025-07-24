@@ -1,4 +1,11 @@
-import { Effect, Console, Array, String, pipe, Data } from "effect";
+import {
+  Effect,
+  Console,
+  Array as EffectArray,
+  String as EffectString,
+  pipe,
+  Data,
+} from "effect";
 import { FileSystem } from "@effect/platform";
 import { Path } from "@effect/platform";
 import { BunRuntime, BunContext } from "@effect/platform-bun";
@@ -66,7 +73,7 @@ const scanPublicDirectory = (
       ),
     );
 
-    return Array.flatten(results);
+    return EffectArray.flatten(results);
   });
 
 const scanAppDirectory = (
@@ -140,7 +147,7 @@ const scanAppDirectory = (
       ),
     );
 
-    return Array.flatten(results);
+    return EffectArray.flatten(results);
   });
 
 const AppLayer = BunContext.layer;
@@ -222,8 +229,8 @@ export const isRootRoute = createRouteMatcher(["^/$"]);`;
 const extractStaticPaths = (routes: readonly RouteInfo[]): readonly string[] =>
   pipe(
     routes,
-    Array.filter((route: RouteInfo) => route.isPage || route.isApi),
-    Array.flatMap((route: RouteInfo) => {
+    EffectArray.filter((route: RouteInfo) => route.isPage || route.isApi),
+    EffectArray.flatMap((route: RouteInfo) => {
       const firstSegment = route.segments[0];
       const staticPaths: string[] = [];
       if (firstSegment && !firstSegment.startsWith("[")) {
@@ -234,7 +241,7 @@ const extractStaticPaths = (routes: readonly RouteInfo[]): readonly string[] =>
       }
       return staticPaths;
     }),
-    Array.dedupe,
+    EffectArray.dedupe,
     (arr) => globalThis.Array.from(arr).sort(),
   );
 
@@ -368,34 +375,36 @@ const generateRoutesFile = (
 
     const allForbiddenNames: readonly string[] = pipe(
       [...staticPaths, ...forbiddenTemplate],
-      Array.dedupe,
+      EffectArray.dedupe,
       (arr) => globalThis.Array.from(arr).sort(),
     );
 
     const allBypassPaths: readonly string[] = pipe(
       [...publicPaths, ...bypassTemplate],
-      Array.dedupe,
+      EffectArray.dedupe,
       (arr) => globalThis.Array.from(arr).sort(),
     );
 
     const allPaths: readonly string[] = pipe(
       [...staticPaths, ...publicPaths],
-      Array.dedupe,
+      EffectArray.dedupe,
       (arr) => globalThis.Array.from(arr).sort(),
     );
 
     const firstSegments: readonly string[] = pipe(
       allPaths,
-      Array.filter(
+      EffectArray.filter(
         (path: string): path is string =>
-          String.isString(path) && path.length > 0 && !path.startsWith("/"),
+          EffectString.isString(path) &&
+          path.length > 0 &&
+          !path.startsWith("/"),
       ),
-      Array.map((path: string) => path.split("/")[0]),
-      Array.filter(
+      EffectArray.map((path: string) => path.split("/")[0]),
+      EffectArray.filter(
         (segment: string | undefined): segment is string =>
-          String.isString(segment) && segment.length > 0,
+          EffectString.isString(segment) && segment.length > 0,
       ),
-      Array.dedupe,
+      EffectArray.dedupe,
       (arr) => globalThis.Array.from(arr).sort(),
     );
 

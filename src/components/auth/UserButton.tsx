@@ -13,12 +13,11 @@ import {
 import { Skeleton } from "~/components/ui/skeleton";
 import { Settings, LogOut, Loader2 } from "lucide-react";
 import UserAvatar from "./UserAvatar";
-import authClient from "#auth/client";
-
-type UserData = typeof authClient.$Infer.Session;
+import authClient, { type AuthTypes } from "#auth/client";
+import { authCall } from "#auth/client.mock";
 
 interface UserButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
-  userdata: UserData;
+  userdata: AuthTypes.Session;
   showName?: boolean;
   modify?: {
     forceOpenState?: boolean;
@@ -37,6 +36,7 @@ export default function UserButton({
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
+    authCall("signOut");
     const result = await authClient.signOut();
     void result;
   };

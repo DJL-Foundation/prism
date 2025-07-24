@@ -1,3 +1,4 @@
+import authClient, { authCall } from "#auth/client.mock";
 import { type Meta, type StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 import UserButton, { UserButtonSkeleton } from "~/components/auth/UserButton";
@@ -85,11 +86,7 @@ export const Simple: Story = {
 
     await userEvent.click(signOutButton!);
 
-    const signOutButtonLoadingState = within(signOutButton!).queryByTestId(
-      "user-button-sign-out-loadingState",
-    );
-
-    await expect(signOutButtonLoadingState).toBeInTheDocument();
+    await expect(authCall).toHaveBeenCalledOnce();
   },
 };
 

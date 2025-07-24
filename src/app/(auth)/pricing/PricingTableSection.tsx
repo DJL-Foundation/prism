@@ -1,4 +1,4 @@
-import Maintenance from "~/components/maintanance";
+import Maintanance from "~/components/maintanance";
 import {
   Card,
   CardHeader,
@@ -22,7 +22,7 @@ export function PricingTableSection() {
         </CardHeader>
         <CardContent className="p-8">
           <div className="flex justify-center items-center">
-            <Maintenance message="nope sry" />
+            <Maintanance message="nope sry" />
           </div>
         </CardContent>
       </Card>

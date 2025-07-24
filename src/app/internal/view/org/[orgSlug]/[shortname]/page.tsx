@@ -1,14 +1,14 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Maintenance from "~/components/maintanance";
+import Maintanance from "~/components/maintanance";
 
 export default function ViewOrgPage() {
   const params = useParams();
   const orgSlug = params.orgSlug as string;
   const shortname = params.shortname as string;
   return (
-    <Maintenance
+    <Maintanance
       debug={true}
       message={`/internal/view/org/${orgSlug}/${shortname}`}
     />
