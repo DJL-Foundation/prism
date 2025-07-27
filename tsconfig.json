@@ -34,6 +34,7 @@
       "#auth/client": ["./src/server/auth-client.ts"],
       "#auth/client.mock": ["./src/server/auth-client.mock.ts"],
       "#storybook/*": ["./.storybook/*"],
+      "#logger": ["./src/lib/logging.ts"],
       "~/*": ["./src/*"],
       "@/*": ["./*"],
     }

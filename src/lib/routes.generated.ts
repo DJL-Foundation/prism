@@ -53,7 +53,8 @@ export const PUBLIC_PATHS = [
   "/img/usb.png",
   "/placeholder.svg",
   "/wordmark.png",
-  "/unclipped.svg"
+  "/unclipped.svg",
+  "/unclipped-noblur.svg"
 ] as const;
 
 /**
@@ -71,6 +72,7 @@ export const ALL_PATHS = [
   "/img/usb.png",
   "/logo.png",
   "/placeholder.svg",
+  "/unclipped-noblur.svg",
   "/unclipped.svg",
   "/wordmark.png",
   "api",
@@ -157,6 +159,7 @@ export const BYPASS_ROUTES = [
   "/robots.txt",
   "/sitemap.xml",
   "/status",
+  "/unclipped-noblur.svg",
   "/unclipped.svg",
   "/wordmark.png"
 ] as const;

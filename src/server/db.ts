@@ -3,33 +3,33 @@ import { readReplicas } from "@prisma/extension-read-replicas";
 import { createPrismaRedisCache } from "prisma-redis-middleware";
 import env from "#env";
 import { Redis, type SetCommandOptions } from "@upstash/redis";
-import { defaultLogLevel, Logger } from "~/lib/logging";
+import { defaultLogLevel, Logger } from "#logger";
 import chalk from "chalk";
 import withPrefix from "~/lib/redis-prefixer";
 
 const dbLogger = new Logger("DB", defaultLogLevel, {
   customMethods: {
-    "db.query": {
+    dbQuery: {
       color: chalk.blue,
       type: "QUERY",
     },
-    "db.mutation": {
+    dbMutation: {
       color: chalk.green,
       type: "MUTATION",
     },
-    "db.error": {
+    dbError: {
       color: chalk.red,
       type: "ERROR",
     },
-    "cache.hit": {
+    cacheHit: {
       color: chalk.yellow,
       type: "CACHE:HIT",
     },
-    "cache.miss": {
+    cacheMiss: {
       color: chalk.magenta,
       type: "CACHE:MISS",
     },
-    "cache.error": {
+    cacheError: {
       color: chalk.red,
       type: "CACHE:ERROR",
     },
@@ -83,8 +83,7 @@ const cacheMiddleware: Prisma.Middleware = createPrismaRedisCache({
       invalidation: { referencesTTL: 300 },
       log: {
         info: (message: string) => dbLogger.info(message),
-        error: (message: string) =>
-          dbLogger.custom("db.error", "ERROR", message),
+        error: (message: string) => dbLogger.c.dbError(message),
         warn: (message: string) => dbLogger.warn(message),
         debug: (message: string) => dbLogger.debug(message),
       },
@@ -93,17 +92,13 @@ const cacheMiddleware: Prisma.Middleware = createPrismaRedisCache({
   cacheTime: 300,
   excludeMethods: ["count", "groupBy"],
   onHit: (key) => {
-    dbLogger.custom("cache.hit", "CACHE:HIT", `Cache hit for key: ${key}`);
+    dbLogger.c.cacheHit(`Cache hit for key: ${key}`);
   },
   onMiss: (key) => {
-    dbLogger.custom("cache.miss", "CACHE:MISS", `Cache miss for key: ${key}`);
+    dbLogger.c.cacheMiss(`Cache miss for key: ${key}`);
   },
   onError: (key) => {
-    dbLogger.custom(
-      "cache.error",
-      "CACHE:ERROR",
-      `Cache error for key: ${key}`,
-    );
+    dbLogger.c.cacheError(`Cache error for key: ${key}`);
   },
 });
 
@@ -131,15 +126,11 @@ const prismaClient = new PrismaClient({
 });
 
 prismaClient.$on("query", (e) => {
-  dbLogger.custom(
-    "db.query",
-    "QUERY",
-    `${e.query} -- ${e.params} (${e.duration}ms)`,
-  );
+  dbLogger.c.dbQuery(`${e.query} -- ${e.params} (${e.duration}ms)`);
 });
 
 prismaClient.$on("error", (e) => {
-  dbLogger.custom("db.error", "ERROR", e.message);
+  dbLogger.c.dbError(e.message);
 });
 
 prismaClient.$on("info", (e) => {

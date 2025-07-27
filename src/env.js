@@ -48,6 +48,9 @@ export const env = createEnv({
     UPLOADTHING_TOKEN: z.string(),
     // No Vercel Blob anymore
 
+    // Cron Jobs
+    CRON_SECRET: z.string(),
+
     // Database (NeonDB)
     DB_MAIN_STRING: z.url(),
     DB_MAIN_DIRECT_STRING: z.url(),
@@ -87,6 +90,9 @@ export const env = createEnv({
 
     // File Storage
     UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
+
+    // Cron Jobs
+    CRON_SECRET: process.env.CRON_SECRET,
 
     // Database (NeonDB)
     DB_MAIN_STRING: process.env.DB_MAIN_STRING,

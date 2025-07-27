@@ -5,28 +5,38 @@ import type { inferRouterInputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
 import { z } from "zod";
 import auth from "#auth";
+import { defaultLogLevel, Logger } from "#logger";
+import chalk from "chalk";
+
+const utfsLogger = new Logger("utfs", defaultLogLevel, {
+  customMethods: {
+    test: {
+      color: chalk.gray,
+      type: "TEST",
+    },
+  },
+});
 
 type InputData = inferRouterInputs<AppRouter>["files"]["create"];
 
 const f = createUploadthing();
 
 async function createFile({ input }: { input: InputData }) {
-  // console.log("Request to Server", input);
+  utfsLogger.trace(`Creating file with input: ${JSON.stringify(input)}`);
 
   let response;
   try {
     response = await api.files.create(input);
   } catch (error) {
-    console.error("Error creating file:", error);
+    utfsLogger.error(
+      `Error creating file: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw new Error(
       `Error creating file: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-  console.log(
-    "Server asigned UUID ",
-    response?.file?.id,
-    " to ",
-    response?.file?.ufsKey,
+  utfsLogger.info(
+    `Server asigned UUID ${response?.file?.id} to ${response?.file?.ufsKey}`,
   );
 
   return response;

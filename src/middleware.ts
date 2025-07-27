@@ -22,18 +22,18 @@ import {
   generateVerificationUuid,
   generateVerificationHashes,
 } from "~/lib/internal-verification";
-import { defaultLogLevel, Logger } from "./lib/logging";
+import { defaultLogLevel, Logger } from "#logger";
 import chalk from "chalk";
 // #endregion Imports
 
 // #region Middleware Logger
 const middlewareLogger = new Logger("Middleware", defaultLogLevel, {
   customMethods: {
-    "auth-check": {
+    authCheck: {
       color: chalk.magenta,
       type: "AUTH_STATE",
     },
-    "route-match": {
+    routeMatch: {
       color: chalk.yellow,
       type: "ROUTING",
     },
@@ -257,11 +257,7 @@ function customRouter(): NextMiddleware {
     const sessionCookie = getSessionCookie(request);
     const isSignedIn = !!sessionCookie;
 
-    middlewareLogger.custom(
-      "auth-check",
-      "CHECKING",
-      `Session cookie exists: ${isSignedIn}`,
-    );
+    middlewareLogger.c.authCheck(`Session cookie exists: ${isSignedIn}`);
 
     // #region Redirects
     // Handle basic redirects first
@@ -320,9 +316,7 @@ function customRouter(): NextMiddleware {
               request.url,
             ),
           );
-          middlewareLogger.custom(
-            "rewrite",
-            "REWRITE",
+          middlewareLogger.c.rewrite(
             `Rewriting to /internal/profile/org: ${response.url}`,
           );
           setInternalVerification(response);
@@ -348,9 +342,7 @@ function customRouter(): NextMiddleware {
             request.url,
           ),
         );
-        middlewareLogger.custom(
-          "rewrite",
-          "REWRITE",
+        middlewareLogger.c.rewrite(
           `Rewriting to /internal/view/org: ${response.url}`,
         );
         setInternalVerification(response);
@@ -362,11 +354,7 @@ function customRouter(): NextMiddleware {
     // #region User Profiles
     // Handle user profile routes
     if (isUserProfile(request)) {
-      middlewareLogger.custom(
-        "route-match",
-        "ROUTING",
-        "Handling User Profile route",
-      );
+      middlewareLogger.c.routeMatch("Handling User Profile route");
       const username = pathname.substring(1);
       middlewareLogger.debug(`Extracted username: ${username}`);
       if (forbiddenNames.includes(username)) {
@@ -378,9 +366,7 @@ function customRouter(): NextMiddleware {
       const response = NextResponse.rewrite(
         new URL(`/internal/profile/user/${username}`, request.url),
       );
-      middlewareLogger.custom(
-        "rewrite",
-        "REWRITE",
+      middlewareLogger.c.rewrite(
         `Rewriting to /internal/profile/user: ${response.url}`,
       );
       setInternalVerification(response);
@@ -391,11 +377,7 @@ function customRouter(): NextMiddleware {
     // #region Free Tier Presentations
     // Handle free tier routes
     if (isFreePresentation(request)) {
-      middlewareLogger.custom(
-        "route-match",
-        "ROUTING",
-        "Handling Free Presentation route",
-      );
+      middlewareLogger.c.routeMatch("Handling Free Presentation route");
       const parts = pathname.split("/");
       const username = parts[1];
       const shortname = parts[2];
@@ -416,9 +398,7 @@ function customRouter(): NextMiddleware {
       const response = NextResponse.rewrite(
         new URL(`/internal/view/free/${username}/${shortname}`, request.url),
       );
-      middlewareLogger.custom(
-        "rewrite",
-        "REWRITE",
+      middlewareLogger.c.rewrite(
         `Rewriting to /internal/view/free: ${response.url}`,
       );
       setInternalVerification(response);
@@ -429,11 +409,7 @@ function customRouter(): NextMiddleware {
     // #region Pro Tier Presentations
     // Handle pro tier routes
     if (isProPresentation(request)) {
-      middlewareLogger.custom(
-        "route-match",
-        "ROUTING",
-        "Handling Pro Presentation route",
-      );
+      middlewareLogger.c.routeMatch("Handling Pro Presentation route");
       const shortname = pathname.substring(2); // Remove leading /!
       middlewareLogger.debug(`Extracted shortname: ${shortname}`);
       if (forbiddenNames.includes(shortname)) {
@@ -446,9 +422,7 @@ function customRouter(): NextMiddleware {
       const response = NextResponse.rewrite(
         new URL(`/internal/view/pro/${shortname}`, request.url),
       );
-      middlewareLogger.custom(
-        "rewrite",
-        "REWRITE",
+      middlewareLogger.c.rewrite(
         `Rewriting to /internal/view/pro: ${response.url}`,
       );
       setInternalVerification(response);
@@ -459,19 +433,13 @@ function customRouter(): NextMiddleware {
     // #region ROOT ROUTE
     // Handle root route
     if (isRootRoute(request)) {
-      middlewareLogger.custom(
-        "route-match",
-        "ROUTING",
-        "Handling Root Route (main domain)",
-      );
+      middlewareLogger.c.routeMatch("Handling Root Route (main domain)");
       // #region Root Domain Hero
       if (!isSignedIn) {
         const response = NextResponse.rewrite(
           new URL("/internal/hero/B2C", request.url),
         );
-        middlewareLogger.custom(
-          "rewrite",
-          "REWRITE",
+        middlewareLogger.c.rewrite(
           `Rewriting to /internal/hero/B2C: ${response.url}`,
         );
         setInternalVerification(response);
@@ -482,9 +450,7 @@ function customRouter(): NextMiddleware {
       const response = NextResponse.rewrite(
         new URL(`/internal/home/user`, request.url),
       );
-      middlewareLogger.custom(
-        "rewrite",
-        "REWRITE",
+      middlewareLogger.c.rewrite(
         `Rewriting to /internal/home/user: ${response.url}`,
       );
       setInternalVerification(response);
