@@ -17,24 +17,60 @@ import { LabeledSeparator } from "../ui/separator";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Checkbox } from "../ui/checkbox";
-import { useSearchParams } from "next/navigation";
+import { redirect } from "next/navigation";
+import { create } from "zustand";
+import { Check } from "lucide-react";
+import { LineSpinner } from "ldrs/react";
+import "ldrs/react/LineSpinner.css";
+import { X } from "react-feather";
+import { toast } from "sonner";
 
 type FormData = Parameters<typeof authClient.signIn.email>[0];
+
+type hoverable = "Passkey" | "Google" | "GitHub" | "email";
+
+interface SubmissionState {
+  state: "idle" | "submitting" | "success" | "failed";
+  initiator: hoverable;
+  submit: (initiator: hoverable) => void;
+  succeed: () => void;
+  fail: () => void;
+}
+
+const useSubmissionState = create<SubmissionState>()((set) => ({
+  state: "idle",
+  initiator: "email",
+  submit: (initiator) =>
+    set({
+      state: "submitting",
+      initiator,
+    }),
+  succeed: () =>
+    set({
+      state: "success",
+    }),
+  fail: () => {
+    set({
+      state: "failed",
+      initiator: "email",
+    });
+    setTimeout(() => {
+      set({
+        state: "idle",
+        initiator: "email",
+      });
+    }, 2000);
+  },
+}));
 
 const MotionButton = motion.create(Button);
 const MotionLabel = motion.create(Label);
 const MotionInput = motion.create(Input);
 
 export default function SignIn() {
-  const [hovered, setHovered] = useState<
-    "Passkey" | "Google" | "GitHub" | "email"
-  >("email");
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<FormData>({
+  const [hovered, setHovered] = useState<hoverable>("email");
+  const submissionState = useSubmissionState();
+  const { register, handleSubmit, control, formState } = useForm<FormData>({
     defaultValues: {
       rememberMe: true,
     },
@@ -49,31 +85,53 @@ export default function SignIn() {
       }),
     ),
   });
+  const { errors } = formState;
+
   const onSubmit: SubmitHandler<FormData> = async (data) => {
+    if (errors.email || errors.password) {
+      submissionState.fail();
+      console.error("Form validation failed", errors);
+      toast.error(
+        `Form validation failed: ${errors.email?.message ?? errors.password?.message ?? "Unknown error"}`,
+      );
+      return;
+    }
+    submissionState.submit("email");
     await authClient.signIn.email({
       email: data.email,
       password: data.password,
       rememberMe: data.rememberMe,
     });
+    submissionState.succeed();
+    redirect("/dashboard");
   };
 
   async function passkeyAuth() {
+    submissionState.submit("Passkey");
     const data = await authClient.signIn.passkey({});
     void data;
+    submissionState.succeed();
+    redirect("/dashboard");
   }
 
   async function googleAuth() {
+    submissionState.submit("Google");
     const data = await authClient.signIn.social({
       provider: "google",
     });
     void data;
+    submissionState.succeed();
+    redirect("/dashboard");
   }
 
   async function githubAuth() {
+    submissionState.submit("GitHub");
     const data = await authClient.signIn.social({
       provider: "github",
     });
     void data;
+    submissionState.succeed();
+    redirect("/dashboard");
   }
 
   useEffect(() => {
@@ -245,8 +303,32 @@ export default function SignIn() {
                 type="submit"
                 variant="default"
                 className="w-full h-11 mt-2"
+                data-testid="submit-button"
               >
-                Continue with email
+                {submissionState.state === "idle" ? (
+                  <>Continue with {hovered}</>
+                ) : submissionState.state === "submitting" ? (
+                  <>
+                    <LineSpinner
+                      size="40"
+                      stroke="3"
+                      speed="1"
+                      color="black"
+                      data-testid="spinner"
+                    />
+                    Signing in with {hovered}...
+                  </>
+                ) : submissionState.state === "success" ? (
+                  <>
+                    <Check data-testid="check-icon" />
+                    Signed In!
+                  </>
+                ) : (
+                  <>
+                    <X data-testid="x-icon" />
+                    Sign In Failed
+                  </>
+                )}
               </MotionButton>
             </motion.form>
           </div>

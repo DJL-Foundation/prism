@@ -3,7 +3,7 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["views", "multiSchema"]
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -116,7 +116,7 @@ model presentations {
 
 view public_presentations {
   id             String
-  shortname      String           @unique
+  shortname      String
   title          String
   description    String?
   logoId         String?
@@ -137,7 +137,7 @@ view public_presentations {
 }
 
 view public_files {
-  id             String             @unique
+  id             String
   name           String
   fileType       file_types
   dataType       String
