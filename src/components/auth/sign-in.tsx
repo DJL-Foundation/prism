@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import authClient from "#auth/client";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { motion } from "motion/react";
@@ -82,7 +81,7 @@ export default function SignIn() {
           .min(6, "Password must be at least 6 characters long")
           .max(128, "Password must be at most 128 characters long"),
         rememberMe: z.boolean().optional(),
-      }),
+      })
     ),
   });
   const { errors } = formState;
@@ -92,7 +91,7 @@ export default function SignIn() {
       submissionState.fail();
       console.error("Form validation failed", errors);
       toast.error(
-        `Form validation failed: ${errors.email?.message ?? errors.password?.message ?? "Unknown error"}`,
+        `Form validation failed: ${errors.email?.message ?? errors.password?.message ?? "Unknown error"}`
       );
       return;
     }

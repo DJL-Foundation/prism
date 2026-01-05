@@ -51,4 +51,5 @@ yarn-error.log*
 *storybook.log
 storybook-static
 
-**hide**
+# Cleanup while Transition
+**.hide**

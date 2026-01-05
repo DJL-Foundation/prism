@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 /*
 import authClient from "#auth/client";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";

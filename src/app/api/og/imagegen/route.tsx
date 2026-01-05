@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import { headers } from "next/headers";
 import { ImageResponse } from "next/og";
 import { type NextRequest, NextResponse } from "next/server";
@@ -152,7 +151,7 @@ export async function GET(request: NextRequest) {
     {
       width: 1200,
       height: 630,
-    },
+    }
   );
 }
 

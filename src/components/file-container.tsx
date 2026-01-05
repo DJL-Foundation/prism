@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 import { Button } from "~/components/ui/button";
 import { UploadButton } from "./uploadthing";
@@ -225,7 +224,7 @@ export default function FileContainer({
   // Function to handle dialog close attempts
   const handleDialogOpenChange = (
     open: boolean,
-    dialogType: "lock" | "unlock" | "changePassword",
+    dialogType: "lock" | "unlock" | "changePassword"
   ) => {
     // Prevent closing if operation is in progress
     if (!open && (lockMutation.isPending || isValidating)) {
@@ -621,7 +620,6 @@ function UploadComponent({
   fileType: FileType;
   disabled?: boolean;
   onSuccess?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   refetchPresentation: () => Promise<any>;
 }) {
   if (disabled) {
@@ -660,7 +658,6 @@ function UploadPreConfigured({
   fileType: FileType;
   presentationId: string;
   onSuccess?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   refetchPresentation: () => Promise<any>;
 }) {
   const endpoint:
@@ -762,7 +759,7 @@ function FileIcon({ fileExtension }: { fileExtension?: string }) {
 // Helper functions
 function getFileIdByType(
   presentation: presentations,
-  fileType: FileType,
+  fileType: FileType
 ): string | undefined {
   switch (fileType) {
     case "logo":

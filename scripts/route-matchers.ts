@@ -8,7 +8,7 @@ import {
 } from "effect";
 import { FileSystem } from "@effect/platform";
 import { Path } from "@effect/platform";
-import { BunRuntime, BunContext } from "@effect/platform-bun";
+import { NodeContext, NodeRuntime } from "@effect/platform-node";
 
 // #region Model
 interface RouteInfo {
@@ -42,14 +42,14 @@ const BYPASS_TEMPLATE_PATH = "../src/lib/bypass.template.ts";
 // #region Services
 const scanPublicDirectory = (
   dir: string,
-  basePath = "",
+  basePath = ""
 ): Effect.Effect<string[], FSError, FileSystem.FileSystem | Path.Path> =>
   Effect.gen(function* (_) {
     const fs = yield* _(FileSystem.FileSystem);
     const path = yield* _(Path.Path);
     const entries = yield* _(
       fs.readDirectory(dir),
-      Effect.mapError((error) => new FSError({ error })),
+      Effect.mapError((error) => new FSError({ error }))
     );
 
     const results = yield* _(
@@ -61,7 +61,7 @@ const scanPublicDirectory = (
           return Effect.gen(function* (_) {
             const stat = yield* _(
               fs.stat(fullPath),
-              Effect.mapError((error) => new FSError({ error })),
+              Effect.mapError((error) => new FSError({ error }))
             );
             if (stat.type === "Directory") {
               return yield* _(scanPublicDirectory(fullPath, newPath));
@@ -69,8 +69,8 @@ const scanPublicDirectory = (
             return [newPath];
           });
         },
-        { concurrency: "inherit" },
-      ),
+        { concurrency: "inherit" }
+      )
     );
 
     return EffectArray.flatten(results);
@@ -79,14 +79,14 @@ const scanPublicDirectory = (
 const scanAppDirectory = (
   dir: string,
   basePath = "",
-  category?: string,
+  category?: string
 ): Effect.Effect<RouteInfo[], FSError, FileSystem.FileSystem | Path.Path> =>
   Effect.gen(function* (_) {
     const fs = yield* _(FileSystem.FileSystem);
     const path = yield* _(Path.Path);
     const entries = yield* _(
       fs.readDirectory(dir),
-      Effect.mapError((error) => new FSError({ error })),
+      Effect.mapError((error) => new FSError({ error }))
     );
 
     const results = yield* _(
@@ -97,13 +97,13 @@ const scanAppDirectory = (
           return Effect.gen(function* (_) {
             const stat = yield* _(
               fs.stat(fullPath),
-              Effect.mapError((error) => new FSError({ error })),
+              Effect.mapError((error) => new FSError({ error }))
             );
             if (stat.type === "Directory") {
               if (entry.startsWith("(") && entry.endsWith(")")) {
                 const categoryName = entry.slice(1, -1);
                 return yield* _(
-                  scanAppDirectory(fullPath, basePath, categoryName),
+                  scanAppDirectory(fullPath, basePath, categoryName)
                 );
               }
               const newPath = basePath ? `${basePath}/${entry}` : `/${entry}`;
@@ -126,7 +126,7 @@ const scanAppDirectory = (
             if (isPage || isLayout || isApi) {
               const segments = basePath.split("/").filter(Boolean);
               const isDynamic = segments.some(
-                (s) => s.startsWith("[") && s.endsWith("]"),
+                (s) => s.startsWith("[") && s.endsWith("]")
               );
               const route: RouteInfo = {
                 path: basePath || "/",
@@ -143,14 +143,12 @@ const scanAppDirectory = (
             return [];
           });
         },
-        { concurrency: "inherit" },
-      ),
+        { concurrency: "inherit" }
+      )
     );
 
     return EffectArray.flatten(results);
   });
-
-const AppLayer = BunContext.layer;
 // #endregion
 
 // #region Logic
@@ -211,17 +209,17 @@ export const isRootRoute = createRouteMatcher(["^/$"]);`;
 
     const exists = yield* _(
       fs.exists(ROUTE_MATCHERS_FILE),
-      Effect.mapError((error) => new FSError({ error })),
+      Effect.mapError((error) => new FSError({ error }))
     );
     if (!exists) {
       yield* _(
         fs.writeFileString(ROUTE_MATCHERS_FILE, content),
         Effect.zipRight(
           Console.log(
-            `✅ Created route matchers lib file: ${ROUTE_MATCHERS_FILE}`,
-          ),
+            `✅ Created route matchers lib file: ${ROUTE_MATCHERS_FILE}`
+          )
         ),
-        Effect.mapError((error) => new FSError({ error })),
+        Effect.mapError((error) => new FSError({ error }))
       );
     }
   });
@@ -242,11 +240,11 @@ const extractStaticPaths = (routes: readonly RouteInfo[]): readonly string[] =>
       return staticPaths;
     }),
     EffectArray.dedupe,
-    (arr) => globalThis.Array.from(arr).sort(),
+    (arr) => globalThis.Array.from(arr).sort()
   );
 
 const generateCategoryData = (
-  routes: readonly RouteInfo[],
+  routes: readonly RouteInfo[]
 ): ReadonlyMap<string, readonly string[]> => {
   const categories = new Map<string, string[]>();
   for (const route of routes) {
@@ -301,7 +299,7 @@ const convertNextPathToRegex = (path: string): string => {
 
 const loadTemplate = (
   path: string,
-  templateKey: string,
+  templateKey: string
 ): Effect.Effect<readonly string[], TemplateError> =>
   Effect.tryPromise({
     try: () => import(path),
@@ -314,18 +312,18 @@ const loadTemplate = (
     Effect.catchTag("TemplateError", (e) =>
       Console.warn(
         `Could not load template from ${path}, using empty array:`,
-        e.error,
-      ).pipe(Effect.as<readonly string[]>([])),
-    ),
+        e.error
+      ).pipe(Effect.as<readonly string[]>([]))
+    )
   );
 
 const loadForbiddenTemplate = loadTemplate(
   FORBIDDEN_TEMPLATE_PATH,
-  "forbiddenNamesTemplate",
+  "forbiddenNamesTemplate"
 );
 const loadBypassTemplate = loadTemplate(
   BYPASS_TEMPLATE_PATH,
-  "bypassRoutesTemplate",
+  "bypassRoutesTemplate"
 );
 
 const generateRouteMatcherFunction = (): string =>
@@ -341,7 +339,7 @@ export function isStaticRoute(pathname: string): boolean {
 `.trim();
 
 const generateCategoryMatchers = (
-  categories: ReadonlyMap<string, readonly string[]>,
+  categories: ReadonlyMap<string, readonly string[]>
 ): string => {
   let categoryContent = "";
   for (const [category, paths] of categories) {
@@ -366,7 +364,7 @@ const generateRoutesFile = (
   routes: readonly RouteInfo[],
   publicPaths: readonly string[],
   forbiddenTemplate: readonly string[],
-  bypassTemplate: readonly string[],
+  bypassTemplate: readonly string[]
 ): Effect.Effect<void, FSError, FileSystem.FileSystem> =>
   Effect.gen(function* (_) {
     const fs = yield* _(FileSystem.FileSystem);
@@ -376,19 +374,19 @@ const generateRoutesFile = (
     const allForbiddenNames: readonly string[] = pipe(
       [...staticPaths, ...forbiddenTemplate],
       EffectArray.dedupe,
-      (arr) => globalThis.Array.from(arr).sort(),
+      (arr) => globalThis.Array.from(arr).sort()
     );
 
     const allBypassPaths: readonly string[] = pipe(
       [...publicPaths, ...bypassTemplate],
       EffectArray.dedupe,
-      (arr) => globalThis.Array.from(arr).sort(),
+      (arr) => globalThis.Array.from(arr).sort()
     );
 
     const allPaths: readonly string[] = pipe(
       [...staticPaths, ...publicPaths],
       EffectArray.dedupe,
-      (arr) => globalThis.Array.from(arr).sort(),
+      (arr) => globalThis.Array.from(arr).sort()
     );
 
     const firstSegments: readonly string[] = pipe(
@@ -397,15 +395,15 @@ const generateRoutesFile = (
         (path: string): path is string =>
           EffectString.isString(path) &&
           path.length > 0 &&
-          !path.startsWith("/"),
+          !path.startsWith("/")
       ),
       EffectArray.map((path: string) => path.split("/")[0]),
       EffectArray.filter(
         (segment: string | undefined): segment is string =>
-          EffectString.isString(segment) && segment.length > 0,
+          EffectString.isString(segment) && segment.length > 0
       ),
       EffectArray.dedupe,
-      (arr) => globalThis.Array.from(arr).sort(),
+      (arr) => globalThis.Array.from(arr).sort()
     );
 
     const content = `// This file is auto-generated by scripts/route-matchers.ts
@@ -462,7 +460,7 @@ ${routes
     isDynamic: ${route.isDynamic},
     segments: [${route.segments.map((s) => `"${s}"`).join(", ")}],
     category: ${route.category ? `"${route.category}"` : "undefined"}
-  }`,
+  }`
   )
   .join(",\n")}
 ] as const;
@@ -508,22 +506,22 @@ export const isOrgPresentation = isUserProfile;
       Effect.zipRight(Console.log(`📊 Found ${routes.length} routes`)),
       Effect.zipRight(
         Console.log(
-          `🗂️  Found ${categories.size} categories: ${globalThis.Array.from(categories.keys()).join(", ")}`,
-        ),
+          `🗂️  Found ${categories.size} categories: ${globalThis.Array.from(categories.keys()).join(", ")}`
+        )
       ),
       Effect.zipRight(
-        Console.log(`🚫 Generated ${allForbiddenNames.length} forbidden names`),
+        Console.log(`🚫 Generated ${allForbiddenNames.length} forbidden names`)
       ),
       Effect.zipRight(
-        Console.log(`📁 Static routes: ${staticPaths.join(", ")}`),
+        Console.log(`📁 Static routes: ${staticPaths.join(", ")}`)
       ),
       Effect.zipRight(
-        Console.log(`🔄 Bypass routes: ${allBypassPaths.length} routes`),
+        Console.log(`🔄 Bypass routes: ${allBypassPaths.length} routes`)
       ),
       Effect.zipRight(
-        Console.log(`📋 Public assets: ${publicPaths.length} files`),
+        Console.log(`📋 Public assets: ${publicPaths.length} files`)
       ),
-      Effect.mapError((error) => new FSError({ error })),
+      Effect.mapError((error) => new FSError({ error }))
     );
   });
 // #endregion
@@ -540,8 +538,8 @@ const main = Effect.gen(function* (_) {
         loadForbiddenTemplate,
         loadBypassTemplate,
       ],
-      { concurrency: "inherit" },
-    ),
+      { concurrency: "inherit" }
+    )
   );
 
   const [routes, publicPaths, forbiddenTemplate, bypassTemplate] = scanResults;
@@ -549,33 +547,32 @@ const main = Effect.gen(function* (_) {
   if (routes.length === 0) {
     return yield* _(
       Effect.fail(
-        new Error(
-          `❌ No routes found. Check if APP_DIR is correct: ${APP_DIR}`,
-        ),
-      ),
+        new Error(`❌ No routes found. Check if APP_DIR is correct: ${APP_DIR}`)
+      )
     );
   }
 
   yield* _(ensureRouteMatchersFile());
   yield* _(
-    generateRoutesFile(routes, publicPaths, forbiddenTemplate, bypassTemplate),
+    generateRoutesFile(routes, publicPaths, forbiddenTemplate, bypassTemplate)
   );
 
   yield* _(Console.log("✅ Route matchers generated successfully!"));
   yield* _(
     Console.log(
-      "💡 Import from: import { isUserProfile, forbiddenNames } from '~/lib/routes.generated'",
-    ),
+      "💡 Import from: import { isUserProfile, forbiddenNames } from '~/lib/routes.generated'"
+    )
   );
 }).pipe(
   Effect.catchAll((error) =>
-    Console.error("Error generating route matchers:", error),
-  ),
+    Console.error("Error generating route matchers:", error)
+  )
 );
 
+const AppLayer = NodeContext.layer;
 const runnable = Effect.provide(main, AppLayer);
 
 export function runRouteMatcherGeneration() {
-  BunRuntime.runMain(runnable);
+  NodeRuntime.runMain(runnable);
 }
 // #endregion

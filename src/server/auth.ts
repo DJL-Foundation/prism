@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import "server-only";
 import { betterAuth } from "better-auth";
 import {
@@ -13,7 +12,6 @@ import {
 } from "better-auth/plugins";
 import { passkey } from "better-auth/plugins/passkey";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { db } from "#db";
 import env from "#env";
 import { forbiddenNames } from "../lib/constants";
 import { ac, admin, proUser, user } from "./permisions";
@@ -30,7 +28,7 @@ const authSecondaryStorage = withPrefix(
   new Redis({
     url: env.DB_KV_KV_REST_API_URL,
     token: env.DB_KV_KV_REST_API_TOKEN,
-  }),
+  })
 );
 
 const auth = betterAuth({

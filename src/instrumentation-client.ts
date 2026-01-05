@@ -1,5 +1,4 @@
 import posthog from "posthog-js";
-import * as Sentry from "@sentry/nextjs";
 import env from "#env";
 
 posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -10,5 +9,3 @@ posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
   capture_exceptions: true, // This enables capturing exceptions using Error Tracking
   debug: process.env.NODE_ENV === "development",
 });
-
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

@@ -32,7 +32,6 @@ const authClient = createAuthClient({
   ],
 });
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AuthTypes {
   export type Session = (typeof authClient)["$Infer"]["Session"];
   export type ActiveOrganization =

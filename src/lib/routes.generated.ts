@@ -16,9 +16,10 @@ export function isStaticRoute(pathname: string): boolean {
 export const STATIC_ROUTES = [
   "api",
   "api/2well2know/oauth-authorization-server",
+  "api/2well2know/oauth-authorization-server.hide.",
   "api/2well2know/oauth-protected-resource",
+  "api/2well2know/oauth-protected-resource.hide.",
   "api/2well2know/vercel/flags",
-  "api/cron/transfers",
   "api/og/imagegen",
   "api/uploadthing",
   "create",
@@ -52,9 +53,9 @@ export const PUBLIC_PATHS = [
   "/img/share.png",
   "/img/usb.png",
   "/placeholder.svg",
-  "/wordmark.png",
+  "/unclipped-noblur.svg",
   "/unclipped.svg",
-  "/unclipped-noblur.svg"
+  "/wordmark.png"
 ] as const;
 
 /**
@@ -77,9 +78,10 @@ export const ALL_PATHS = [
   "/wordmark.png",
   "api",
   "api/2well2know/oauth-authorization-server",
+  "api/2well2know/oauth-authorization-server.hide.",
   "api/2well2know/oauth-protected-resource",
+  "api/2well2know/oauth-protected-resource.hide.",
   "api/2well2know/vercel/flags",
-  "api/cron/transfers",
   "api/og/imagegen",
   "api/uploadthing",
   "create",
@@ -187,30 +189,12 @@ export const ALL_ROUTES = [
     category: "legal"
   },
   {
-    path: "/api/cron/transfers",
-    isPage: false,
-    isLayout: false,
-    isApi: true,
-    isDynamic: false,
-    segments: ["api", "cron", "transfers"],
-    category: undefined
-  },
-  {
     path: "/api/og/imagegen",
     isPage: false,
     isLayout: false,
     isApi: true,
     isDynamic: false,
     segments: ["api", "og", "imagegen"],
-    category: undefined
-  },
-  {
-    path: "/api/trpc/[trpc]",
-    isPage: false,
-    isLayout: false,
-    isApi: true,
-    isDynamic: true,
-    segments: ["api", "trpc", "[trpc]"],
     category: undefined
   },
   {
@@ -223,12 +207,21 @@ export const ALL_ROUTES = [
     category: undefined
   },
   {
-    path: "/api/2well2know/vercel/flags",
+    path: "/api/2well2know/oauth-authorization-server.hide.",
     isPage: false,
     isLayout: false,
     isApi: true,
     isDynamic: false,
-    segments: ["api", "2well2know", "vercel", "flags"],
+    segments: ["api", "2well2know", "oauth-authorization-server.hide."],
+    category: undefined
+  },
+  {
+    path: "/api/2well2know/oauth-protected-resource.hide.",
+    isPage: false,
+    isLayout: false,
+    isApi: true,
+    isDynamic: false,
+    segments: ["api", "2well2know", "oauth-protected-resource.hide."],
     category: undefined
   },
   {
@@ -247,6 +240,24 @@ export const ALL_ROUTES = [
     isApi: true,
     isDynamic: false,
     segments: ["api", "2well2know", "oauth-protected-resource"],
+    category: undefined
+  },
+  {
+    path: "/api/2well2know/vercel/flags",
+    isPage: false,
+    isLayout: false,
+    isApi: true,
+    isDynamic: false,
+    segments: ["api", "2well2know", "vercel", "flags"],
+    category: undefined
+  },
+  {
+    path: "/api/mcp.hide./[[...transport]]",
+    isPage: false,
+    isLayout: false,
+    isApi: true,
+    isDynamic: true,
+    segments: ["api", "mcp.hide.", "[[...transport]]"],
     category: undefined
   },
   {
@@ -313,15 +324,6 @@ export const ALL_ROUTES = [
     category: "auth"
   },
   {
-    path: "/sign-in",
-    isPage: true,
-    isLayout: false,
-    isApi: false,
-    isDynamic: false,
-    segments: ["sign-in"],
-    category: "auth"
-  },
-  {
     path: "/sign-up/[[...sign-up]]",
     isPage: true,
     isLayout: false,
@@ -340,22 +342,13 @@ export const ALL_ROUTES = [
     category: "auth"
   },
   {
-    path: "/",
+    path: "/sign-in",
     isPage: true,
     isLayout: false,
     isApi: false,
     isDynamic: false,
-    segments: [],
-    category: undefined
-  },
-  {
-    path: "/",
-    isPage: false,
-    isLayout: true,
-    isApi: false,
-    isDynamic: false,
-    segments: [],
-    category: undefined
+    segments: ["sign-in"],
+    category: "auth"
   },
   {
     path: "/internal/hero/B2B",
@@ -391,6 +384,15 @@ export const ALL_ROUTES = [
     isApi: false,
     isDynamic: false,
     segments: ["internal", "home", "user"],
+    category: undefined
+  },
+  {
+    path: "/internal",
+    isPage: false,
+    isLayout: true,
+    isApi: false,
+    isDynamic: false,
+    segments: ["internal"],
     category: undefined
   },
   {
@@ -439,12 +441,21 @@ export const ALL_ROUTES = [
     category: undefined
   },
   {
-    path: "/internal",
+    path: "/",
     isPage: false,
     isLayout: true,
     isApi: false,
     isDynamic: false,
-    segments: ["internal"],
+    segments: [],
+    category: undefined
+  },
+  {
+    path: "/",
+    isPage: true,
+    isLayout: false,
+    isApi: false,
+    isDynamic: false,
+    segments: [],
     category: undefined
   }
 ] as const;
@@ -457,9 +468,10 @@ export const forbiddenNames = [
   "anonymous",
   "api",
   "api/2well2know/oauth-authorization-server",
+  "api/2well2know/oauth-authorization-server.hide.",
   "api/2well2know/oauth-protected-resource",
+  "api/2well2know/oauth-protected-resource.hide.",
   "api/2well2know/vercel/flags",
-  "api/cron/transfers",
   "api/og/imagegen",
   "api/uploadthing",
   "app",
