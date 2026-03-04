@@ -26,17 +26,28 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "#env": ["./src/env.js"],
+      "#flags": ["./src/server/flags.ts"],
+      "#utility": ["./src/server/utility.ts"],
+      "#db": ["./src/server/db.ts"],
+      "#auth": ["./src/server/auth.ts"],
+      "#auth/client": ["./src/server/auth-client.ts"],
+      "#auth/client.mock": ["./src/server/auth-client.mock.ts"],
+      "#storybook/*": ["./.storybook/*"],
+      "#logger": ["./src/lib/logging.ts"],
+      "~/*": ["./src/*"],
+      "@/*": ["./*"],
     }
   },
   "include": [
-    ".eslintrc.cjs",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "**/*.cjs",
     "**/*.js",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".storybook/**/*.ts",
+    ".storybook/**/*.tsx",
   ],
   "exclude": ["node_modules"]
 }

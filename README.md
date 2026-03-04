@@ -10,7 +10,9 @@
 
 <br/>
 
-![Alt](https://repobeats.axiom.co/api/embed/4dd2b79bf0398bf65b3ea61807418169d40fac67.svg "Repobeats analytics image")
+<div align="center">
+  <img src="https://repobeats.axiom.co/api/embed/4dd2b79bf0398bf65b3ea61807418169d40fac67.svg" alt="Repobeats analytics image" title="Repobeats analytics image" />
+</div>
 
 <div align="center">
   <a href="https://gitbutler.com/">

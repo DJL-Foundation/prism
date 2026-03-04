@@ -1,33 +1,42 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/only-throw-error */
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import { api } from "~/trpc/server";
 import type { inferRouterInputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
 import { z } from "zod";
+import auth from "#auth";
+import { defaultLogLevel, Logger } from "#logger";
+import chalk from "chalk";
+
+const utfsLogger = new Logger("utfs", defaultLogLevel, {
+  customMethods: {
+    test: {
+      color: chalk.gray,
+      type: "TEST",
+    },
+  },
+});
 
 type InputData = inferRouterInputs<AppRouter>["files"]["create"];
 
 const f = createUploadthing();
 
-import { auth, clerkMiddleware } from "@clerk/nextjs/server";
-
 async function createFile({ input }: { input: InputData }) {
-  // console.log("Request to Server", input);
+  utfsLogger.trace(`Creating file with input: ${JSON.stringify(input)}`);
 
   let response;
   try {
     response = await api.files.create(input);
   } catch (error) {
-    console.error("Error creating file:", error);
-    throw error;
+    utfsLogger.error(
+      `Error creating file: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    throw new Error(
+      `Error creating file: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
-  console.log(
-    "Server asigned UUID ",
-    response?.file?.id,
-    " to ",
-    response?.file?.ufsKey,
+  utfsLogger.info(
+    `Server asigned UUID ${response?.file?.id} to ${response?.file?.ufsKey}`,
   );
 
   return response;
@@ -77,12 +86,12 @@ export const UploadthingRouter = {
       }),
     )
     .middleware(async ({ req, input }) => {
-      const Auth = auth();
-      // console.log("Auth: ", Auth);
-      if (!(await Auth).userId) throw new UploadThingError("Unauthorized");
+      const authData = await auth.api.getSession({ headers: req.headers });
+      // console.log("Auth Data: ", authData);
+      if (!authData) throw new UploadThingError("Unauthorized");
 
       return {
-        userId: (await Auth).userId,
+        userId: authData.user.id,
         presentationId: input.presentationId,
       };
     })
@@ -99,7 +108,7 @@ export const UploadthingRouter = {
         url: file.ufsUrl,
 
         presentationId: metadata.presentationId,
-        owner: metadata.userId!,
+        ownerId: metadata.userId,
       };
 
       const response = await createFile({ input: request });
@@ -119,12 +128,12 @@ export const UploadthingRouter = {
       }),
     )
     .middleware(async ({ req, input }) => {
-      const Auth = auth();
-      // console.log("Auth: ", Auth);
-      if (!(await Auth).userId) throw new UploadThingError("Unauthorized");
+      const authData = await auth.api.getSession({ headers: req.headers });
+      // console.log("Auth Data: ", authData);
+      if (!authData) throw new UploadThingError("Unauthorized");
 
       return {
-        userId: (await Auth).userId,
+        userId: authData.user.id,
         presentationId: input.presentationId,
         fileType: input.fileType,
       };
@@ -143,7 +152,7 @@ export const UploadthingRouter = {
         url: file.ufsUrl,
 
         presentationId: metadata.presentationId,
-        owner: metadata.userId!,
+        ownerId: metadata.userId,
       };
 
       const response = await createFile({ input: request });
@@ -172,12 +181,12 @@ export const UploadthingRouter = {
       }),
     )
     .middleware(async ({ req, input }) => {
-      const Auth = auth();
-      // console.log("Auth: ", Auth);
-      if (!(await Auth).userId) throw new UploadThingError("Unauthorized");
+      const authData = await auth.api.getSession({ headers: req.headers });
+      // console.log("Auth Data: ", authData);
+      if (!authData) throw new UploadThingError("Unauthorized");
 
       return {
-        userId: (await Auth).userId,
+        userId: authData.user.id,
         presentationId: input.presentationId,
         fileType: input.fileType,
       };
@@ -195,7 +204,7 @@ export const UploadthingRouter = {
         url: file.ufsUrl,
 
         presentationId: metadata.presentationId,
-        owner: metadata.userId!,
+        ownerId: metadata.userId,
       };
 
       const response = await createFile({ input: request });

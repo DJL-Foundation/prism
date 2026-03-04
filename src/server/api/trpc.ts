@@ -9,8 +9,10 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import { checkBotId } from "botid/server";
 
 import { db } from "~/server/db";
+import auth from "#auth";
 
 /**
  * 1. CONTEXT
@@ -25,9 +27,11 @@ import { db } from "~/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  const authData = await auth.api.getSession({ headers: opts.headers });
   return {
     db,
     ...opts,
+    auth: authData,
   };
 };
 
@@ -96,6 +100,72 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   return result;
 });
 
+const protectMiddleware = t.middleware(async ({ ctx, next }) => {
+  // Ensure the user is authenticated before proceeding
+  if (!ctx.auth) {
+    throw new Error("Unauthorized");
+  }
+
+  return next();
+});
+
+const proTierMiddleware = t.middleware(async ({ ctx, next }) => {
+  // Ensure the user has a Pro tier subscription before proceeding
+  const hasPermission = await auth.api.userHasPermission({
+    body: {
+      permissions: {
+        tier: ["pro"],
+      },
+    },
+    headers: ctx.headers,
+  });
+
+  if (!hasPermission) {
+    throw new Error("Unauthorized");
+  }
+
+  return next();
+});
+
+const adminMiddleware = t.middleware(async ({ ctx, next }) => {
+  const hasPermission = await auth.api.userHasPermission({
+    body: {
+      permissions: {
+        tier: ["admin"],
+      },
+    },
+    headers: ctx.headers,
+  });
+
+  if (!hasPermission) {
+    throw new Error("Unauthorized");
+  }
+
+  return next();
+});
+
+const cronMiddleware = t.middleware(async ({ ctx, next }) => {
+  if (
+    ctx.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
+    throw new Error("Unauthorized");
+  }
+
+  return next();
+});
+
+const botIdMiddleware = t.middleware(async ({ ctx: _ctx, next }) => {
+  const botId = await checkBotId();
+
+  if (botId.isBot) {
+    throw new Error(
+      "Unauthorized: Bots are not allowed to access this endpoint",
+    );
+  }
+
+  return next();
+});
+
 /**
  * Public (unauthenticated) procedure
  *
@@ -103,4 +173,51 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure.use(timingMiddleware);
+export const publicProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(botIdMiddleware);
+
+export const publicProcedureBotsAllowed = t.procedure.use(timingMiddleware);
+
+/**
+ * Protected procedure
+ *
+ * This is a procedure that requires the user to be authenticated. It uses the `protectMiddleware`
+ * to ensure that the user is logged in before proceeding.
+ */
+export const protectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(botIdMiddleware)
+  .use(protectMiddleware);
+
+/**
+ * Pro-tier procedure
+ *
+ * This is a procedure that requires the user to have a Pro tier subscription. It uses the
+ * `proTierMiddleware` to ensure that the user has the required permissions before proceeding.
+ */
+export const proTierProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(botIdMiddleware)
+  .use(proTierMiddleware);
+
+/**
+ * Admin procedure
+ *
+ * This is a procedure that requires the user to have admin permissions. It uses the `adminMiddleware`
+ * to ensure that the user has the required permissions before proceeding.
+ */
+export const adminProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(botIdMiddleware)
+  .use(adminMiddleware);
+
+/**
+ * Cron procedure
+ *
+ * This is a procedure that requires the user to have a valid cron token. It uses the `cronMiddleware`
+ * to ensure that the user has the required permissions before proceeding.
+ */
+export const cronProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(cronMiddleware);

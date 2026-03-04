@@ -1,16 +1,30 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  cronProcedure,
+  protectedProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
 
 import { db } from "~/server/db";
 import { del, put } from "@vercel/blob";
 import { utapi } from "~/server/uploadthing";
 import { type Prisma } from "@prisma/client";
 import * as argon2 from "argon2";
-import crypto from "crypto";
+// Using Web Crypto API instead of Node.js crypto for edge runtime compatibility
+
+// Helper function to create SHA-256 hash using Web Crypto API
+async function createSHA256Hash(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export const fileRouter = createTRPCRouter({
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         name: z.string(),
@@ -27,7 +41,7 @@ export const fileRouter = createTRPCRouter({
         url: z.string().url(),
 
         presentationId: z.string().uuid(),
-        owner: z.string().length(32),
+        ownerId: z.string().length(32),
       }),
     )
     .query(async ({ input }) => {
@@ -48,7 +62,11 @@ export const fileRouter = createTRPCRouter({
         isLocked: false,
 
         presentationId: input.presentationId,
-        owner: input.owner,
+        owner: {
+          connect: {
+            id: input.ownerId,
+          },
+        },
 
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -81,7 +99,7 @@ export const fileRouter = createTRPCRouter({
     });
   }),
 
-  deleteById: publicProcedure
+  deleteById: protectedProcedure
     .input(z.string().uuid())
     .mutation(async ({ input }) => {
       // Check if the file exists
@@ -157,7 +175,7 @@ export const fileRouter = createTRPCRouter({
       return;
     }),
   // toggle locked with password
-  editLock: publicProcedure
+  editLock: protectedProcedure
     .input(
       z.object({
         fileId: z.string().uuid(),
@@ -215,10 +233,7 @@ export const fileRouter = createTRPCRouter({
             };
           }
 
-          const hashedPassword = crypto
-            .createHash("sha256")
-            .update(input.oldPassword)
-            .digest("hex");
+          const hashedPassword = await createSHA256Hash(input.oldPassword);
 
           const match = await argon2.verify(file.password, hashedPassword);
           if (!match) {
@@ -235,7 +250,7 @@ export const fileRouter = createTRPCRouter({
             },
             data: {
               password: input.newPassword
-                ? await argon2.hash(input.newPassword)
+                ? await argon2.hash(await createSHA256Hash(input.newPassword))
                 : null,
               updatedAt: new Date(),
             },
@@ -253,10 +268,7 @@ export const fileRouter = createTRPCRouter({
             throw new Error("Error unreachable");
           }
 
-          const prehash = crypto
-            .createHash("sha256")
-            .update(input.newPassword)
-            .digest("hex");
+          const prehash = await createSHA256Hash(input.newPassword);
 
           const hash = await argon2.hash(prehash);
 
@@ -283,10 +295,7 @@ export const fileRouter = createTRPCRouter({
             throw new Error("Error unreachable");
           }
 
-          const prehash = crypto
-            .createHash("sha256")
-            .update(input.oldPassword)
-            .digest("hex");
+          const prehash = await createSHA256Hash(input.oldPassword);
 
           const match = await argon2.verify(file.password, prehash);
           if (!match) {
@@ -319,7 +328,7 @@ export const fileRouter = createTRPCRouter({
           throw new Error("Error Unreachable");
       }
     }),
-  verifyPassword: publicProcedure
+  verifyPassword: protectedProcedure
     .input(
       z.object({
         fileId: z.string().uuid(),
@@ -349,10 +358,7 @@ export const fileRouter = createTRPCRouter({
         };
       }
 
-      const hashedPassword = crypto
-        .createHash("sha256")
-        .update(input.password)
-        .digest("hex");
+      const hashedPassword = await createSHA256Hash(input.password);
 
       const match = await argon2.verify(file.password, hashedPassword);
 
@@ -363,7 +369,7 @@ export const fileRouter = createTRPCRouter({
       };
     }),
   transfers: createTRPCRouter({
-    run: publicProcedure.mutation(async () => {
+    run: cronProcedure.mutation(async () => {
       // TODO: Implement transfer monitoring with posthog
       // First set all the files wo are idle and storedIn !== targetStorage to queued
       // This will probably only be called if i manually move around files between storage services
@@ -457,7 +463,7 @@ export const fileRouter = createTRPCRouter({
           case "blob":
             try {
               const up_blob_response = await put(
-                `pr/${process.env.NODE_ENV}/${file.owner}/${file.name}`,
+                `pr/${process.env.NODE_ENV}/${file.ownerId}/${file.name}`,
                 blob,
                 {
                   access: "public",

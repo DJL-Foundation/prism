@@ -29,3 +29,23 @@ const Separator = React.forwardRef<
 Separator.displayName = SeparatorPrimitive.Root.displayName;
 
 export { Separator };
+
+interface LabeledSeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
+  label: string;
+}
+
+const LabeledSeparator: React.FC<LabeledSeparatorProps> = ({
+  label,
+  className,
+  ...props
+}) => (
+  <div className={cn("relative flex items-center", className)} {...props}>
+    <Separator className="flex-1" />
+    <span className="mx-2 bg-background px-2 text-xs text-muted-foreground uppercase">
+      {label}
+    </span>
+    <Separator className="flex-1" />
+  </div>
+);
+
+export { LabeledSeparator };

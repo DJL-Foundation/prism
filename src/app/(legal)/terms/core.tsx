@@ -7,7 +7,6 @@ import { ArrowLeft, Printer } from "react-feather";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { LanguageToggle } from "~/components/language-toggle";
-import { useTheme } from "next-themes";
 
 // Animation variants
 const containerVariants: Variants = {
@@ -45,25 +44,10 @@ export default function TermsOfService() {
   const currentDate = updateDate.toLocaleDateString(
     language === "de" ? "de-DE" : "en-US",
   );
-  const { setTheme, theme } = useTheme();
 
-  // Handle printing
+  // Print functionality is now handled by the layout
   const handlePrint = () => {
-    // Store current theme
-    const currentTheme = theme;
-
-    // Set theme to light for printing
-    setTheme("light");
-
-    // Print
-    setTimeout(() => {
-      window.print();
-
-      // Restore theme after printing
-      setTimeout(() => {
-        setTheme(currentTheme ?? "system");
-      }, 500);
-    }, 300);
+    window.print();
   };
 
   return (

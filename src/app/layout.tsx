@@ -3,19 +3,21 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import type React from "react";
 import type { Metadata } from "next";
-import Header from "~/components/header";
-import Footer from "~/components/footer";
 import { ThemeProvider } from "~/components/theme-provider";
 
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { BotIdClient } from "botid/client";
 
-import { ClerkProvider } from "@clerk/nextjs";
 import { extractRouterConfig } from "uploadthing/server";
 import { UploadthingRouter } from "./api/uploadthing/core";
-import { Toaster } from "~/components/ui/sonner";
-import { dark } from "@clerk/themes";
+import { PostHogProvider } from "~/server/providers";
+import env from "~/env";
+import authClient from "#auth/client";
+import posthog from "posthog-js";
+import LayoutContent from "~/components/layout-content";
+import { devModeFlag } from "#flags";
 
 // Implement Metadata Images TODO
 export const metadata: Metadata = {
@@ -88,18 +90,48 @@ export const metadata: Metadata = {
   classification: "Presentation Foundation",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const shouldShowVercelToolbar = env.NODE_ENV === "development";
+  const assumeSignedIn = posthog._isIdentified();
+  const authDataRequest = await authClient.getSession();
+  const authData = authDataRequest.data;
+  const beta = await devModeFlag();
+
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: dark,
-      }}
-    >
-      <html lang="en" className={`${GeistSans.variable}`}>
-        <body>
-          <TRPCReactProvider>
+    <html lang="en">
+      <body className={`${GeistSans.variable} antialiased`}>
+        <TRPCReactProvider>
+          <BotIdClient
+            protect={[
+              {
+                path: "/api/trpc/*",
+                method: "GET",
+              },
+              {
+                path: "/api/trpc/*",
+                method: "POST",
+              },
+              {
+                path: "/api/auth/*",
+                method: "GET",
+              },
+              {
+                path: "/api/auth/*",
+                method: "POST",
+              },
+              {
+                path: "/api/uploadthing/*",
+                method: "GET",
+              },
+              {
+                path: "/api/uploadthing/*",
+                method: "POST",
+              },
+            ]}
+          />
+          <PostHogProvider userData={authData}>
             <NextSSRPlugin
               routerConfig={extractRouterConfig(UploadthingRouter)}
             />
@@ -109,16 +141,18 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <Toaster />
-              <div className="min-h-screen flex flex-col bg-background text-foreground">
-                <Header />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-              </div>
+              <LayoutContent
+                shouldShowVercelToolbar={shouldShowVercelToolbar}
+                assumeSignedIn={assumeSignedIn}
+                authData={authData}
+                beta={beta}
+              >
+                {children}
+              </LayoutContent>
             </ThemeProvider>
-          </TRPCReactProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+          </PostHogProvider>
+        </TRPCReactProvider>
+      </body>
+    </html>
   );
 }

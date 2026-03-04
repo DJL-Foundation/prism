@@ -1,3 +1,4 @@
+import Maintanance from "~/components/maintanance";
 import {
   Card,
   CardHeader,
@@ -5,7 +6,6 @@ import {
   CardDescription,
   CardContent,
 } from "~/components/ui/card";
-import { PricingTable } from "@clerk/nextjs";
 
 export function PricingTableSection() {
   return (
@@ -22,7 +22,7 @@ export function PricingTableSection() {
         </CardHeader>
         <CardContent className="p-8">
           <div className="flex justify-center items-center">
-            <PricingTable />
+            <Maintanance message="nope sry" />
           </div>
         </CardContent>
       </Card>

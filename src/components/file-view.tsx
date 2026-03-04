@@ -32,7 +32,6 @@ interface FileViewProps {
 export default function FileView({
   fileId,
   fileType,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   presentationId,
 }: FileViewProps) {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
