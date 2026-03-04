@@ -51,19 +51,28 @@
   },
   "type": "module",
   "scripts": {
-    "build": "next build --turbo",
     "check": "biome check . && tsc --noEmit",
-    "dev": "next dev --turbo",
     "format:check": "biome check .",
     "format:write": "biome format . --write",
     "postinstall": "npm-run-all -p postinstall:*",
     "postinstall:scripts": "bun /scripts/postinstall.ts",
     "preview": "next build && next start",
-    "start": "next start",
     "typecheck": "tsc --noEmit",
     "mcp": "mcp-inspector",
-    "auth:generate": "cli generate"
+    "auth:gen": "bun scripts/auth-gen.ts generate",
+    "auth:migrate": "bun scripts/auth-gen.ts migrate",
+    "auth:push": "bun scripts/auth-gen.ts push",
+    "auth:studio": "drizzle-kit studio",
+    "dev": "bunx --bun next dev",
+    "build": "bunx --bun next build",
+    "start": "bunx --bun next start",
+    "test": "bun test",
+    "lint": "bunx --bun biome check",
+    "format": "bunx --bun biome format --write",
+    "convex:dev": "bunx convex dev",
+    "convex:deploy": "bunx convex deploy"
   },
+  "platform": "node",
   "imports": {
     "#env": {
       "default": "./src/env.js"
@@ -75,7 +84,7 @@
       "default": "./src/server/utility.ts"
     },
     "#db": {
-      "default": "./src/server/db.ts"
+      "default": "./src/server/auth-db.ts"
     },
     "#auth": {
       "default": "./src/server/auth.ts"
@@ -92,6 +101,7 @@
     }
   },
   "dependencies": {
+    "@better-auth/passkey": "^1.4.10",
     "@effect/platform-node": "^0.104.0",
     "@emotion/styled": "^11.14.1",
     "@flags-sdk/posthog": "^0.2.2",
@@ -128,7 +138,6 @@
     "@t3-oss/env-nextjs": "^0.13.10",
     "@tanstack/react-query": "^5.90.16",
     "@uploadthing/react": "^7.3.3",
-    "@upstash/redis": "^1.36.0",
     "@vercel/blob": "^2.0.0",
     "@vercel/toolbar": "^0.1.41",
     "argon2": "^0.44.0",
@@ -140,7 +149,6 @@
     "cmdk": "1.1.1",
     "convex": "^1.31.2",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "embla-carousel-react": "8.6.0",
     "flags": "^4.0.2",
@@ -181,6 +189,7 @@
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.10",
+    "@biomejs/biome": "2.3.11",
     "@effect/platform": "^0.94.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/ms": "^2.1.0",

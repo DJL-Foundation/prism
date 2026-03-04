@@ -11,8 +11,8 @@ import {
   zCustomMutation,
   zCustomQuery,
 } from "convex-helpers/server/zod4";
-import { api } from "#";
-import type { DataModel, Doc } from "#/dataModel";
+// import { api } from "#";
+// import type { DataModel, Doc } from "#/dataModel";
 import {
   action,
   internalAction,
@@ -21,7 +21,7 @@ import {
   mutation,
   query,
 } from "#/server";
-import { result } from "#utility";
+// import { result } from "#utility";
 //#endregion
 
 //#region Documentation
@@ -47,26 +47,26 @@ import { result } from "#utility";
 //#region Mutations
 
 // Zod (Convex) Mutation with authentication data
-export const zMa = zCustomMutation(mutation, {
-  args: { userId: v.id("users") },
-  input: async (
-    ctx,
-    args,
-  ): Promise<{
-    ctx: GenericMutationCtx<DataModel> & { user: Doc<"users"> | null };
-    args: Record<string, never>;
-  }> => {
-    const user =
-      result(
-        await ctx.runQuery(api.poc.users.getUserById, {
-          userId: args.userId,
-        }),
-      )
-        .deconstruct()
-        .content() ?? null;
-    return { ctx: { ...ctx, user }, args: {} };
-  },
-});
+// export const zMa = zCustomMutation(mutation, {
+//   args: { userId: v.id("users") },
+//   input: async (
+//     ctx,
+//     args,
+//   ): Promise<{
+//     ctx: GenericMutationCtx<DataModel> & { user: Doc<"users"> | null };
+//     args: Record<string, never>;
+//   }> => {
+//     const user =
+//       result(
+//         await ctx.runQuery(api.poc.users.getUserById, {
+//           userId: args.userId,
+//         }),
+//       )
+//         .deconstruct()
+//         .content() ?? null;
+//     return { ctx: { ...ctx, user }, args: {} };
+//   },
+// });
 
 // Zod (Convex) Mutation
 export const zM = zCustomMutation(mutation, {
@@ -104,26 +104,26 @@ export const ziQ = zCustomQuery(internalQuery, {
 });
 
 // Zod (Convex) Query with authentication data
-export const zQa = zCustomQuery(query, {
-  args: { userId: v.id("users") },
-  input: async (
-    ctx,
-    args,
-  ): Promise<{
-    ctx: GenericQueryCtx<DataModel> & { user: Doc<"users"> | null };
-    args: Record<string, never>;
-  }> => {
-    const user =
-      result(
-        await ctx.runQuery(api.poc.users.getUserById, {
-          userId: args.userId,
-        }),
-      )
-        .deconstruct()
-        .content() ?? null;
-    return { ctx: { ...ctx, user }, args: {} };
-  },
-});
+// export const zQa = zCustomQuery(query, {
+//   args: { userId: v.id("users") },
+//   input: async (
+//     ctx,
+//     args,
+//   ): Promise<{
+//     ctx: GenericQueryCtx<DataModel> & { user: Doc<"users"> | null };
+//     args: Record<string, never>;
+//   }> => {
+//     const user =
+//       result(
+//         await ctx.runQuery(api.poc.users.getUserById, {
+//           userId: args.userId,
+//         }),
+//       )
+//         .deconstruct()
+//         .content() ?? null;
+//     return { ctx: { ...ctx, user }, args: {} };
+//   },
+// });
 //#endregion
 
 //#region Actions
@@ -145,24 +145,24 @@ export const ziA = zCustomAction(internalAction, {
 });
 
 // Zod (Convex) Action with authentication data
-export const zAa = zCustomAction(action, {
-  args: { userId: v.id("users") },
-  input: async (
-    ctx,
-    args,
-  ): Promise<{
-    ctx: GenericActionCtx<DataModel> & { user: Doc<"users"> | null };
-    args: Record<string, never>;
-  }> => {
-    const user =
-      result(
-        await ctx.runQuery(api.poc.users.getUserById, {
-          userId: args.userId,
-        }),
-      )
-        .deconstruct()
-        .content() ?? null;
-    return { ctx: { ...ctx, user }, args: {} };
-  },
-});
+// export const zAa = zCustomAction(action, {
+//   args: { userId: v.id("users") },
+//   input: async (
+//     ctx,
+//     args,
+//   ): Promise<{
+//     ctx: GenericActionCtx<DataModel> & { user: Doc<"users"> | null };
+//     args: Record<string, never>;
+//   }> => {
+//     const user =
+//       result(
+//         await ctx.runQuery(api.poc.users.getUserById, {
+//           userId: args.userId,
+//         }),
+//       )
+//         .deconstruct()
+//         .content() ?? null;
+//     return { ctx: { ...ctx, user }, args: {} };
+//   },
+// });
 //#endregion

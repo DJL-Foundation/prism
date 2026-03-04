@@ -1,6 +1,10 @@
 - [ ] Implement Storybook
 - [ ] Configure Storybook theme
 - [x] Move Over to Better Auth
+- [x] Integrate Convex with Better Auth (JWT)
+- [ ] Set up Convex environment variables
+- [ ] Deploy Convex functions (`npx convex dev`)
+- [ ] Test Convex auth integration
 - [ ] I18n (react.i18next.com)
 - [ ] Create Auth Components (with Storybook)
 - [ ] Create Auth Pages (with Storybook)

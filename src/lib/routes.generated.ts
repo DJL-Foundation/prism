@@ -15,9 +15,7 @@ export function isStaticRoute(pathname: string): boolean {
  */
 export const STATIC_ROUTES = [
   "api",
-  "api/2well2know/oauth-authorization-server",
   "api/2well2know/oauth-authorization-server.hide.",
-  "api/2well2know/oauth-protected-resource",
   "api/2well2know/oauth-protected-resource.hide.",
   "api/2well2know/vercel/flags",
   "api/og/imagegen",
@@ -77,9 +75,7 @@ export const ALL_PATHS = [
   "/unclipped.svg",
   "/wordmark.png",
   "api",
-  "api/2well2know/oauth-authorization-server",
   "api/2well2know/oauth-authorization-server.hide.",
-  "api/2well2know/oauth-protected-resource",
   "api/2well2know/oauth-protected-resource.hide.",
   "api/2well2know/vercel/flags",
   "api/og/imagegen",
@@ -225,24 +221,6 @@ export const ALL_ROUTES = [
     category: undefined
   },
   {
-    path: "/api/2well2know/oauth-authorization-server",
-    isPage: false,
-    isLayout: false,
-    isApi: true,
-    isDynamic: false,
-    segments: ["api", "2well2know", "oauth-authorization-server"],
-    category: undefined
-  },
-  {
-    path: "/api/2well2know/oauth-protected-resource",
-    isPage: false,
-    isLayout: false,
-    isApi: true,
-    isDynamic: false,
-    segments: ["api", "2well2know", "oauth-protected-resource"],
-    category: undefined
-  },
-  {
     path: "/api/2well2know/vercel/flags",
     isPage: false,
     isLayout: false,
@@ -267,15 +245,6 @@ export const ALL_ROUTES = [
     isApi: true,
     isDynamic: true,
     segments: ["api", "auth", "[...all]"],
-    category: undefined
-  },
-  {
-    path: "/api/mcp/[[...transport]]",
-    isPage: false,
-    isLayout: false,
-    isApi: true,
-    isDynamic: true,
-    segments: ["api", "mcp", "[[...transport]]"],
     category: undefined
   },
   {
@@ -467,9 +436,7 @@ export const forbiddenNames = [
   "admin",
   "anonymous",
   "api",
-  "api/2well2know/oauth-authorization-server",
   "api/2well2know/oauth-authorization-server.hide.",
-  "api/2well2know/oauth-protected-resource",
   "api/2well2know/oauth-protected-resource.hide.",
   "api/2well2know/vercel/flags",
   "api/og/imagegen",

@@ -2,15 +2,17 @@ import { createAuthClient } from "better-auth/react";
 import {
   adminClient,
   oneTapClient,
-  passkeyClient,
   usernameClient,
   organizationClient,
+  jwtClient,
 } from "better-auth/client/plugins";
+import { passkeyClient } from "@better-auth/passkey/client";
 import env from "#env";
 import { ac, user, proUser, admin } from "./permisions";
 
 const authClient = createAuthClient({
   plugins: [
+    jwtClient(),
     usernameClient(),
     passkeyClient(),
     oneTapClient({
