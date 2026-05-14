@@ -1,7 +1,7 @@
 # Quick Install and Development Setup
 [default]
 [private]
-install-dev: install env dev
+install-dev: install env multi-dev
 
 [no-cd]
 [private]
@@ -52,6 +52,32 @@ dev port="3000":
         wrangler dev --port {{ port }}; \
     fi
 
+# Run web dev + Convex dev together
+[private]
+multi-dev:
+    @if command -v tmux &>/dev/null; then \
+        if [ -n "$$TMUX" ]; then \
+            if tmux list-windows -F '#{window_name}' | grep -qx 'PRISM-DEV'; then \
+                tmux select-window -t PRISM-DEV; \
+                tmux send-keys -t PRISM-DEV:0.0 C-c; \
+                tmux send-keys -t PRISM-DEV:0.1 C-c; \
+                tmux send-keys -t PRISM-DEV:0.0 'just dev' Enter; \
+                tmux send-keys -t PRISM-DEV:0.1 'just convex-dev' Enter; \
+            else \
+                tmux new-window -n PRISM-DEV 'just dev'; \
+                tmux split-window -h -t PRISM-DEV 'just convex-dev'; \
+                tmux select-window -t PRISM-DEV; \
+            fi; \
+        else \
+            SESSION="prism-$${PWD##*/}"; \
+            tmux new-session -d -s "$$SESSION" -n PRISM-DEV 'just dev'; \
+            tmux split-window -h -t "$$SESSION":PRISM-DEV 'just convex-dev'; \
+            tmux attach -t "$$SESSION"; \
+        fi; \
+    else \
+        bunx --bun concurrently "just dev" "just convex-dev"; \
+    fi
+
 # Run type checking and linting
 [group('Code Quality')]
 check:
@@ -99,6 +125,21 @@ preview: build
     else \
       wrangler preview; \
     fi
+
+# Convex development server
+[group('Convex')]
+convex-dev:
+    bunx --bun convex dev
+
+# Convex deploy
+[group('Convex')]
+convex-deploy:
+    bunx --bun convex deploy
+
+# Convex code generation
+[group('Convex')]
+convex-codegen:
+    bunx --bun convex codegen
 
 [group('Tools')]
 env env="development":
