@@ -3,9 +3,6 @@ import { useEffect } from "react";
 import { scan } from "react-scan";
 import * as m from "#p";
 import { initLenis } from "~/lib/lenis";
-import CustomCursor from "../components/CustomCursor";
-import Footer from "../components/Footer";
-import Header from "../components/Header";
 import NoiseOverlay from "../components/NoiseOverlay";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { NotFoundPage } from "~/components/404";
@@ -183,10 +180,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             <PostHogProvider>
               <HotkeysProvider>
                 <NoiseOverlay />
-                <CustomCursor />
-                <Header />
                 <main data-transition-container>{children}</main>
-                <Footer />
                 <TanStackDevtools
                   config={{
                     position: "bottom-right",

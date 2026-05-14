@@ -9,7 +9,7 @@ export const Logo: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (
   return (
     <img
       src={LogoSvg}
-      alt="Erstwählerforum Logo"
+      alt="Prism Logo"
       className="w-5 h-5 dark:invert"
       {...props}
     />

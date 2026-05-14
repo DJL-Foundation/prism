@@ -1,0 +1,36 @@
+
+export default {
+  "images": [
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Stade%2C_Hansehafen_--_2018_--_2961.jpg",
+      "credit": "Dietmar Rabich / Wikimedia Commons / “Stade, Hansehafen -- 2018 -- 2961” / CC BY-SA 4.0, via Wikimedia Commons"
+    },
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Athenaeum_30.jpg",
+      "credit": "Ulf Heinsohn, CC BY-SA 3.0, via Wikimedia Commons"
+    },
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Realschule-Camper-H%C3%B6he.jpg",
+      "credit": "Christian Dierks, CC BY-SA 3.0, via Wikimedia Commons"
+    },
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/5/53/Aerial_photograph_8329_DxO_retusche.jpg",
+      "credit": "Walter Rademacher / Wikipedia, CC BY-SA 3.0, via Wikimedia Commons"
+    },
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Luftaufnahmen_Nordseekueste_-Stadeum-_2012-05-by-RaBoe-484.jpg",
+      "credit": "Ra Boe / Wikipedia, CC BY-SA 3.0 DE, via Wikimedia Commons"
+    },
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/0/01/StadeStadeum.JPG",
+      "credit": "German Wikipedia user MrsMyer, CC BY-SA 3.0, via Wikimedia Commons"
+    }
+  ],
+  "_meta": {
+    "filePath": "images.toml",
+    "fileName": "images.toml",
+    "directory": ".",
+    "extension": "toml",
+    "path": "images"
+  }
+}

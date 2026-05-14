@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from "node:url";
-// import contentCollections from "@content-collections/vite";
+import contentCollections from "@content-collections/vite";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
@@ -16,27 +16,27 @@ const deployment =
 
 const config = defineConfig({
   resolve: {
-  tsconfigPaths: true,
-  alias: {
-    "#cc": fileURLToPath(
-      new URL("./.content-collections/generated", import.meta.url),
-    ),
-    "#p": fileURLToPath(new URL("./src/paraglide/messages", import.meta.url)),
-    "#env": fileURLToPath(new URL("./src/env.ts", import.meta.url)),
-    "#flags": fileURLToPath(new URL("./src/lib/flags.ts", import.meta.url)),
-    "~pub": fileURLToPath(new URL("./public", import.meta.url)),
-    "~": fileURLToPath(new URL("./src", import.meta.url)),
-    "@": fileURLToPath(new URL("./", import.meta.url)),
+    tsconfigPaths: true,
+    alias: {
+      "#cc": fileURLToPath(
+        new URL("./.content-collections/generated", import.meta.url),
+      ),
+      "#p": fileURLToPath(new URL("./src/paraglide/messages", import.meta.url)),
+      "#env": fileURLToPath(new URL("./src/env.ts", import.meta.url)),
+      "#flags": fileURLToPath(new URL("./src/lib/flags.ts", import.meta.url)),
+      "~pub": fileURLToPath(new URL("./public", import.meta.url)),
+      "~": fileURLToPath(new URL("./src", import.meta.url)),
+      "@": fileURLToPath(new URL("./", import.meta.url)),
+    },
   },
-},
   plugins: [
     devtools(),
     paraglideVitePlugin({
-      project: './project.inlang',
-      outdir: './src/paraglide',
-      strategy: ['url', 'baseLocale'],
+      project: "./project.inlang",
+      outdir: "./src/paraglide",
+      strategy: ["url", "baseLocale"],
     }),
-    // contentCollections(),
+    contentCollections(),
     deployment,
     tailwindcss(),
     tanstackStart({
@@ -61,6 +61,6 @@ const config = defineConfig({
       },
     },
   },
-})
+});
 
-export default config
+export default config;
