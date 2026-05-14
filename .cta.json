@@ -1,0 +1,29 @@
+{
+  "projectName": "prism",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "bun",
+  "includeExamples": false,
+  "tailwind": true,
+  "addOnOptions": {},
+  "envVarValues": {
+    "CONVEX_DEPLOYMENT": "tbc",
+    "VITE_CONVEX_URL": "tbc"
+  },
+  "git": false,
+  "install": false,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "biome",
+    "cloudflare",
+    "workos",
+    "convex",
+    "form",
+    "paraglide",
+    "shadcn",
+    "t3env",
+    "posthog"
+  ]
+}
