@@ -24,6 +24,19 @@ const config = defineConfig({
       "#p": fileURLToPath(new URL("./src/paraglide/messages", import.meta.url)),
       "#env": fileURLToPath(new URL("./src/env.ts", import.meta.url)),
       "#flags": fileURLToPath(new URL("./src/lib/flags.ts", import.meta.url)),
+      "#c": fileURLToPath(
+        new URL("./src/server/convex/_generated/api.d.ts", import.meta.url),
+      ),
+      "#cs": fileURLToPath(
+        new URL("./src/server/convex/_generated/server.d.ts", import.meta.url),
+      ),
+      "#cdm": fileURLToPath(
+        new URL(
+          "./src/server/convex/_generated/dataModel.d.ts",
+          import.meta.url,
+        ),
+      ),
+      "~s": fileURLToPath(new URL("./src/server", import.meta.url)),
       "~pub": fileURLToPath(new URL("./public", import.meta.url)),
       "~": fileURLToPath(new URL("./src", import.meta.url)),
       "@": fileURLToPath(new URL("./", import.meta.url)),

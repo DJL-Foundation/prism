@@ -9,6 +9,10 @@
       "#p": ["./src/paraglide/messages"],
       "#env": ["./src/env.ts"],
       "#flags": ["./src/lib/flags.ts"],
+      "#c": ["./src/server/convex/_generated/api.d.ts"],
+      "#cs": ["./src/server/convex/_generated/server.d.ts"],
+      "#cdm": ["./src/server/convex/_generated/dataModel.d.ts"],
+      "~s/*": ["./src/server/*"],
       "~/*": ["./src/*"],
       "~pub/*": ["./public/*"],
       "@/*": ["./*"],
@@ -29,6 +33,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
-  }
+    "noUncheckedSideEffectImports": true,
+  },
 }
