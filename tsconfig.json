@@ -1,0 +1,38 @@
+{
+  "include": ["**/*.ts", "**/*.tsx"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "paths": {
+      "#cc": ["./.content-collections/generated"],
+      "#p": ["./src/paraglide/messages"],
+      "#env": ["./src/env.ts"],
+      "#flags": ["./src/lib/flags.ts"],
+      "#c": ["./src/server/convex/_generated/api.d.ts"],
+      "#cs": ["./src/server/convex/_generated/server.d.ts"],
+      "#cdm": ["./src/server/convex/_generated/dataModel.d.ts"],
+      "~s/*": ["./src/server/*"],
+      "~/*": ["./src/*"],
+      "~pub/*": ["./public/*"],
+      "@/*": ["./*"],
+    },
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    /* Linting */
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+  },
+}
