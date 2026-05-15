@@ -118,7 +118,7 @@ Acceptance:
 ## 8) Architecture Decision (MVP)
 ### Empfohlene Zielarchitektur
 - Frontend + Edge: Cloudflare Workers (beibehalten)
-- DB/App Backend: Convex in EU-West (Ireland) für EU-User
+- DB/App Backend: Convex in EU-West (Ireland) nur, wenn usage-based Betrieb akzeptiert wird; Free-Tier ist dafür nicht ausreichend
 - Object Storage: Cloudflare R2 mit EU-Jurisdiction-Bucket
 - Auth: Better Auth (self-managed) ODER WorkOS (managed), siehe DSGVO-Teil
 
@@ -146,12 +146,13 @@ Empfehlung für Prism (dein Kontext "klein, nützlich, low-profit"):
 - Produktionsnah und DSGVO-robuster: Better Auth + EU-Postgres oder EU-Convex + eigene Datenhoheit
 
 ### 9.3 Convex Free-Tier mit US-Daten
-- Convex unterstützt laut Doku Regionen inkl. EU West (Ireland) und US East.
-- Wenn Free-Tier absichtlich US-Region nutzt, bleibt das DSGVO-pflichtig (Drittlandtransfer).
-- Technisch machbar, aber du brauchst klare Rechtsgrundlage, Transparenz im Privacy Notice und saubere DPA/Transfer-Bewertung.
+- Convex unterstützt Regionen inkl. EU West (Ireland) und US East, aber EU-Deployments sind an usage-based Betrieb gekoppelt.
+- Für dein Setup heißt das: Mit reinem Convex Free-Tier kannst du kein EU-Deployment anlegen.
+- Ein Free-Tier-Setup landet damit praktisch eher bei einer US-Region und bleibt DSGVO-pflichtig (Drittlandtransfer), sofern personenbezogene Daten verarbeitet werden.
+- Technisch machbar, aber du brauchst dann klare Rechtsgrundlage, Transparenz im Privacy Notice und saubere DPA/Transfer-Bewertung.
 
 Pragmatische Empfehlung:
-- Nicht nach Tier trennen (Free=US, Pro=EU), sondern standardmäßig EU-Region für alle personenbezogenen Daten.
+- Nicht nach Tier trennen, sondern die Produktionsumgebung klar festlegen: entweder EU-Convex als bezahltes Setup oder eine andere EU-hosted Datenlösung.
 - Falls US unvermeidbar: nur mit dokumentierter Transfer-Logik und klaren Nutzerinfos.
 
 ### 9.4 Convex vs Postgres
@@ -164,7 +165,7 @@ Postgres (z. B. EU-hosted Managed Postgres):
 - Contra: mehr Backend- und Query-Aufwand
 
 Empfehlung:
-- Für schnellen Launch mit deinem bestehenden Code: Convex in EU-West
+- Für schnellen Launch mit deinem bestehenden Code: Convex Free-Tier nur für einen PoC; für EU-konformen Betrieb brauchst du ein bezahltes EU-Deployment oder alternativ Postgres in der EU
 - Für langfristige Datenportabilität/Enterprise-Story: Migrationspfad zu Postgres offenhalten
 
 ### 9.5 Upload Provider
