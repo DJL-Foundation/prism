@@ -4,22 +4,13 @@ import { scan } from "react-scan";
 import * as m from "#p";
 import { initLenis } from "~/lib/lenis";
 import NoiseOverlay from "../components/NoiseOverlay";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { NotFoundPage } from "~/components/404";
 import { ServerErrorPage } from "~/components/500";
 import {
   HeadContent,
   Scripts,
-  createRootRoute,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { TanStackDevtools } from "@tanstack/react-devtools";
-import { HotkeysProvider } from "@tanstack/react-hotkeys";
-import { HotkeysDevtoolsPanel } from "@tanstack/react-hotkeys-devtools";
-import WorkOSProvider from "../integrations/workos/provider";
-import ConvexProvider from "../integrations/convex/provider";
-import PostHogProvider from "../integrations/posthog/client";
 import { getLocale } from "~/paraglide/runtime";
 import appCss from "../styles.css?url";
 
@@ -175,37 +166,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body className="dark">
-        <WorkOSProvider>
-          <ConvexProvider>
-            <PostHogProvider>
-              <HotkeysProvider>
-                <NoiseOverlay />
-                <main data-transition-container>{children}</main>
-                <TanStackDevtools
-                  config={{
-                    position: "bottom-right",
-                  }}
-                  plugins={[
-                    {
-                      name: "Tanstack Router",
-                      render: <TanStackRouterDevtoolsPanel />,
-                    },
-                    TanStackQueryDevtools,
-                    {
-                      name: "Tanstack Hotkeys",
-                      render: (
-                        <HotkeysDevtoolsPanel
-                          theme="dark"
-                          devtoolsOpen={false}
-                        />
-                      ),
-                    },
-                  ]}
-                />
-              </HotkeysProvider>
-            </PostHogProvider>
-          </ConvexProvider>
-        </WorkOSProvider>
+        <NoiseOverlay />
+        <main data-transition-container>{children}</main>
         <Scripts />
       </body>
     </html>
