@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PresentationDemoRouteImport } from './routes/presentation.demo'
 import { Route as ImpressumIndexRouteImport } from './routes/impressum/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -22,31 +23,40 @@ const ImpressumIndexRoute = ImpressumIndexRouteImport.update({
   path: '/impressum/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PresentationDemoRoute = PresentationDemoRouteImport.update({
+  id: '/presentation/demo',
+  path: '/presentation/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/impressum/': typeof ImpressumIndexRoute
+  '/presentation/demo': typeof PresentationDemoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/impressum': typeof ImpressumIndexRoute
+  '/presentation/demo': typeof PresentationDemoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/impressum/': typeof ImpressumIndexRoute
+  '/presentation/demo': typeof PresentationDemoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/impressum/'
+  fullPaths: '/' | '/impressum/' | '/presentation/demo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/impressum'
-  id: '__root__' | '/' | '/impressum/'
+  to: '/' | '/impressum' | '/presentation/demo'
+  id: '__root__' | '/' | '/impressum/' | '/presentation/demo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ImpressumIndexRoute: typeof ImpressumIndexRoute
+  PresentationDemoRoute: typeof PresentationDemoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImpressumIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/presentation/demo': {
+      id: '/presentation/demo'
+      path: '/presentation/demo'
+      fullPath: '/presentation/demo'
+      preLoaderRoute: typeof PresentationDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ImpressumIndexRoute: ImpressumIndexRoute,
+  PresentationDemoRoute: PresentationDemoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
