@@ -9,10 +9,10 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
-const deployment =
-  process.env.ENVIRONMENT === "development"
-    ? nitro()
-    : cloudflare({ viteEnvironment: { name: "ssr" } });
+const isVercel = process.env.VERCEL === "1";
+const deployment = isVercel
+  ? nitro()
+  : cloudflare({ viteEnvironment: { name: "ssr" } });
 
 const config = defineConfig({
   resolve: {
