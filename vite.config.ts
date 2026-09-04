@@ -59,7 +59,7 @@ const config = defineConfig({
       },
       sitemap: {
         enabled: true,
-        host: "https://ewf-stade.de",
+        host: "https://prism.djl.foundation",
       },
     }),
     viteReact(),
