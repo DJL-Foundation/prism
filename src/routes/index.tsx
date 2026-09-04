@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import * as m from "#p";
 import { Logo } from "~/components/logo";
-import { generateMetaTags, generateWebSiteSchema } from "~/lib/meta";
+import { generateMetaTags } from "~/lib/meta";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -22,7 +22,6 @@ export const Route = createFileRoute("/")({
       url: "/",
       type: "website",
     }),
-    scripts: [generateWebSiteSchema()],
   }),
 });
 
