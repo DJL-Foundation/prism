@@ -15,7 +15,7 @@ export interface MetaTagsConfig {
   modifiedTime?: string;
 }
 
-const SITE_URL = "https://ewf-stade.de";
+const SITE_URL = "https://prism.djl.foundation";
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
 
 export function generateMetaTags(config: MetaTagsConfig) {
